@@ -2,7 +2,24 @@
 
 #include "sys_plat.h"
 
-int main(void) {
+void thread1_entry(void *arg) {
+  while (1) {
+    plat_printf("this is thread1: %s\n", (char *)arg);
+    sys_sleep(1000);
+  }
+}
+
+void thread2_entry(void *arg) {
+  while (1) {
+    plat_printf("this is thread2: %s\n", (char *)arg);
+    sys_sleep(1000);
+  }
+}
+
+int main(int argc, char **argv) {
+  sys_thread_create(thread1_entry, "AAAA");
+  sys_thread_create(thread2_entry, "BBBB");
+
   // 以下是测试代码，可以删掉
   // 打开物理网卡，设置好硬件地址
   static const uint8_t netdev0_hwaddr[] = {0x00, 0x50, 0x56, 0xc0, 0x00, 0x11};
