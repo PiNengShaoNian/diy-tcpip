@@ -1,7 +1,8 @@
 ﻿#include <stdio.h>
 
-#include "sys_plat.h"
 #include "echo/tcp_echo_client.h"
+#include "echo/tcp_echo_server.h"
+#include "sys_plat.h"
 
 static sys_sem_t sem;
 static sys_mutex_t mutex;
@@ -74,6 +75,7 @@ int main(int argc, char **argv) {
   // sys_thread_create(thread1_entry, "AAAA");
   // sys_thread_create(thread2_entry, "BBBB");
 
+  tcp_echo_server_start(5000);
   tcp_echo_client_start(friend0_ip, 5000);
 
   // 以下是测试代码，可以删掉
