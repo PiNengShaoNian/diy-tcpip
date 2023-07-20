@@ -1,6 +1,7 @@
 ﻿#include <stdio.h>
 
 #include "sys_plat.h"
+#include "echo/tcp_echo_client.h"
 
 static sys_sem_t sem;
 static sys_mutex_t mutex;
@@ -70,8 +71,10 @@ int main(int argc, char **argv) {
   read_sem = sys_sem_create(0);
   write_sem = sys_sem_create(sizeof(buffer));
 
-  sys_thread_create(thread1_entry, "AAAA");
-  sys_thread_create(thread2_entry, "BBBB");
+  // sys_thread_create(thread1_entry, "AAAA");
+  // sys_thread_create(thread2_entry, "BBBB");
+
+  tcp_echo_client_start(friend0_ip, 5000);
 
   // 以下是测试代码，可以删掉
   // 打开物理网卡，设置好硬件地址
