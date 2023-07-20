@@ -6,11 +6,19 @@ static sys_sem_t sem;
 static sys_mutex_t mutex;
 static int count;
 
+static char buffer[100];
+static int write_index, read_index;
+
 void thread1_entry(void *arg) {
-  for (int i = 0; i < 1000000; i++) {
-    sys_mutex_lock(mutex);
-    count++;
-    sys_mutex_unlock(mutex);
+  for (int i = 0; i < 2 * sizeof(buffer); i++) {
+    uint8_t data = buffer[read_index++];
+
+    if (read_index >= sizeof(buffer)) {
+      read_index = 0;
+    }
+
+    plat_printf("thread 1: read data=%d\n", data);
+    sys_sleep(200);
   }
 
   plat_printf("count: %d\n", count);
@@ -24,13 +32,16 @@ void thread1_entry(void *arg) {
 }
 
 void thread2_entry(void *arg) {
-  for (int i = 0; i < 1000000; i++) {
-    sys_mutex_lock(mutex);
-    count--;
-    sys_mutex_unlock(mutex);
-  }
+  for (int i = 0; i < 2 * sizeof(buffer); i++) {
+    buffer[write_index++] = i;
 
-  plat_printf("count: %d\n", count);
+    if (write_index >= sizeof(buffer)) {
+      write_index = 0;
+    }
+
+    plat_printf("thread 2: write data = %d\n", i);
+    sys_sleep(100);
+  }
 
   while (1) {
     sys_sem_wait(sem, 0);
