@@ -8,9 +8,12 @@ static int count;
 
 static char buffer[100];
 static int write_index, read_index;
+static sys_sem_t read_sem;
 
 void thread1_entry(void *arg) {
   for (int i = 0; i < 2 * sizeof(buffer); i++) {
+    sys_sem_wait(read_sem, 0);
+
     uint8_t data = buffer[read_index++];
 
     if (read_index >= sizeof(buffer)) {
@@ -32,6 +35,7 @@ void thread1_entry(void *arg) {
 }
 
 void thread2_entry(void *arg) {
+  sys_sleep(100);
   for (int i = 0; i < 2 * sizeof(buffer); i++) {
     buffer[write_index++] = i;
 
@@ -40,6 +44,7 @@ void thread2_entry(void *arg) {
     }
 
     plat_printf("thread 2: write data = %d\n", i);
+    sys_sem_notify(read_sem);
     sys_sleep(100);
   }
 
@@ -52,6 +57,7 @@ void thread2_entry(void *arg) {
 int main(int argc, char **argv) {
   sem = sys_sem_create(0);
   mutex = sys_mutex_create();
+  read_sem = sys_sem_create(0);
 
   sys_thread_create(thread1_entry, "AAAA");
   sys_thread_create(thread2_entry, "BBBB");
