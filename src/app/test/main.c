@@ -76,10 +76,12 @@ net_err_t netdev_init(void) {
   return NET_ERR_OK;
 }
 
+#define DBG_TEST DBG_LEVEL_INFO
+
 int main(int argc, char **argv) {
-  dbg_info(DBG_STYLE_ERROR "dbg info");
-  dbg_info(DBG_STYLE_RESET "dbg info");
-  dbg_info(DBG_STYLE_WARNING "dbg info");
+  dbg_info(DBG_TEST, "info");
+  dbg_warning(DBG_TEST, "warning");
+  dbg_error(DBG_TEST, "error");
 
   net_init();
 
