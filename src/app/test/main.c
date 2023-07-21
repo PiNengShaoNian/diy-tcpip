@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
+#include "mblock.h"
 #include "net.h"
 #include "nlist.h"
 #include "sys_plat.h"
