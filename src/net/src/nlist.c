@@ -18,6 +18,18 @@ void nlist_insert_first(nlist_t *list, nlist_node_t *node) {
   list->count++;
 }
 
+void nlist_insert_last(nlist_t *list, nlist_node_t *node) {
+  node->next = (nlist_node_t *)0;
+  node->pre = list->last;
+  if (nlist_is_empty(list)) {
+    list->last = list->first = node;
+  } else {
+    list->last->next = node;
+    list->last = node;
+  }
+  list->count++;
+}
+
 nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node) {
   if (node == list->first) {
     list->first = node->next;

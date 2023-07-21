@@ -30,6 +30,7 @@ typedef struct _nlist_t {
 
 void nlist_init(nlist_t *list);
 void nlist_insert_first(nlist_t *list, nlist_node_t *node);
+void nlist_insert_last(nlist_t *list, nlist_node_t *node);
 
 static inline int nlist_count(nlist_t *list) { return list->count; }
 static inline int nlist_is_empty(nlist_t *list) { return list->count == 0; }
@@ -55,6 +56,16 @@ static inline nlist_node_t *nlist_remove_first(nlist_t *list) {
   }
 
   return first;
+}
+
+static inline nlist_node_t *nlist_remove_last(nlist_t *list) {
+  nlist_node_t *last = nlist_last(list);
+
+  if (last) {
+    nlist_remove(list, last);
+  }
+
+  return last;
 }
 
 #endif

@@ -88,6 +88,7 @@ void nlist_test(void) {
   tnode_t node[NODE_CNT];
   nlist_t list;
 
+  plat_printf("insert first\n");
   nlist_init(&list);
   for (int i = 0; i < NODE_CNT; i++) {
     node[i].id = i;
@@ -103,6 +104,25 @@ void nlist_test(void) {
   plat_printf("remove first\n");
   for (int i = 0; i < NODE_CNT; i++) {
     p = nlist_remove_first(&list);
+    tnode_t *tnode = nlist_entry(p, tnode_t, node);
+    plat_printf("%d\n", tnode->id);
+  }
+
+  plat_printf("insert last\n");
+  nlist_init(&list);
+  for (int i = 0; i < NODE_CNT; i++) {
+    node[i].id = i;
+    nlist_insert_last(&list, &node[i].node);
+  }
+
+  nlist_for_each(p, &list) {
+    tnode_t *tnode = nlist_entry(p, tnode_t, node);
+    plat_printf("%d\n", tnode->id);
+  }
+
+  plat_printf("remove last\n");
+  for (int i = 0; i < NODE_CNT; i++) {
+    p = nlist_remove_last(&list);
     tnode_t *tnode = nlist_entry(p, tnode_t, node);
     plat_printf("%d\n", tnode->id);
   }
