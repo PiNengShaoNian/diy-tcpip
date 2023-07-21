@@ -61,3 +61,20 @@ int mblock_free_cnt(mblock_t *block) {
   nlocker_unlock(&block->locker);
   return count;
 }
+
+void mblock_free(mblock_t *mblock, void *block) {
+  nlocker_lock(&mblock->locker);
+  nlist_insert_last(&mblock->free_list, (nlist_node_t *)block);
+  nlocker_unlock(&mblock->locker);
+
+  if (mblock->locker.type != NLOCKER_NONE) {
+    sys_sem_notify(mblock->alloc_sem);
+  }
+}
+
+void mblock_destroy(mblock_t *mblock) {
+  if (mblock->locker.type != NLOCKER_NONE) {
+    sys_sem_free(mblock->alloc_sem);
+    nlocker_destroy(&mblock->locker);
+  }
+}

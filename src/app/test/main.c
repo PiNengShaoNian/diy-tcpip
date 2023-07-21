@@ -153,6 +153,13 @@ void mblock_test(void) {
     plat_printf("block: %p, free_count: %d\n", temp[i],
                 mblock_free_cnt(&blist));
   }
+
+  for (int i = 0; i < 10; i++) {
+    mblock_free(&blist, temp[i]);
+    plat_printf("free count: %d\n", mblock_free_cnt(&blist));
+  }
+
+  mblock_destroy(&blist);
 }
 
 void basic_test(void) {
