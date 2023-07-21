@@ -140,7 +140,17 @@ void nlist_test(void) {
   }
 }
 
-void basic_test(void) { nlist_test(); }
+void mblock_test(void) {
+  mblock_t blist;
+  static uint8_t buffer[100][10];
+
+  mblock_init(&blist, buffer, 100, 10, NLOCKER_THREAD);
+}
+
+void basic_test(void) {
+  nlist_test();
+  mblock_test();
+}
 
 #define DBG_TEST DBG_LEVEL_INFO
 
