@@ -1,5 +1,6 @@
 ﻿#include <stdio.h>
 
+#include "dbg.h"
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
 #include "net.h"
@@ -76,6 +77,8 @@ net_err_t netdev_init(void) {
 }
 
 int main(int argc, char **argv) {
+  dbg_info("dbg info");
+
   net_init();
 
   net_start();
