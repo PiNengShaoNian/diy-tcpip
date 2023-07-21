@@ -93,6 +93,12 @@ void nlist_test(void) {
     node[i].id = i;
     nlist_insert_first(&list, &node[i].node);
   }
+
+  nlist_node_t *p;
+  nlist_for_each(p, &list) {
+    tnode_t *tnode = nlist_entry(p, tnode_t, node);
+    plat_printf("%d\n", tnode->id);
+  }
 }
 
 void basic_test(void) { nlist_test(); }

@@ -36,4 +36,13 @@ static inline int nlist_is_empty(nlist_t *list) { return list->count == 0; }
 static inline nlist_node_t *nlist_first(nlist_t *list) { return list->first; }
 static inline nlist_node_t *nlist_last(nlist_t *list) { return list->last; }
 
+#define nlist_for_each(node, list) \
+  for (node = (list)->first; node; node = node->next)
+
+#define offset_to_parent(addr, type, member) \
+  (type *)((char *)addr - offsetof(type, member))
+
+#define nlist_entry(addr, type, member) \
+  ((addr) ? offset_to_parent((addr), type, member) : (type *)0)
+
 #endif
