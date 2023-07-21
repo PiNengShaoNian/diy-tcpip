@@ -45,4 +45,16 @@ static inline nlist_node_t *nlist_last(nlist_t *list) { return list->last; }
 #define nlist_entry(addr, type, member) \
   ((addr) ? offset_to_parent((addr), type, member) : (type *)0)
 
+nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node);
+
+static inline nlist_node_t *nlist_remove_first(nlist_t *list) {
+  nlist_node_t *first = nlist_first(list);
+
+  if (first) {
+    nlist_remove(list, first);
+  }
+
+  return first;
+}
+
 #endif
