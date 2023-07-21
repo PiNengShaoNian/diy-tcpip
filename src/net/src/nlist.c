@@ -49,5 +49,31 @@ nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node) {
 
   node->pre = node->next = (nlist_node_t *)0;
   list->count--;
+
+  if (list->count == 0) {
+    nlist_init(list);
+  }
+
   return node;
+}
+
+void nlist_insert_after(nlist_t *list, nlist_node_t *pre, nlist_node_t *node) {
+  if (nlist_is_empty(list) || !pre) {
+    nlist_insert_first(list, node);
+    return;
+  }
+
+  node->next = pre->next;
+  node->pre = pre;
+
+  if (pre->next) {
+    pre->next->pre = node;
+  }
+  pre->next = node;
+
+  if (list->last == pre) {
+    list->last = node;
+  }
+
+  list->count++;
 }

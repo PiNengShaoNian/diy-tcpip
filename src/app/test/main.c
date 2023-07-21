@@ -126,6 +126,17 @@ void nlist_test(void) {
     tnode_t *tnode = nlist_entry(p, tnode_t, node);
     plat_printf("%d\n", tnode->id);
   }
+
+  plat_printf("insert after\n");
+  for (int i = 0; i < NODE_CNT; i++) {
+    node[i].id = i;
+    nlist_insert_after(&list, nlist_first(&list), &node[i].node);
+  }
+
+  nlist_for_each(p, &list) {
+    tnode_t *tnode = nlist_entry(p, tnode_t, node);
+    plat_printf("%d\n", tnode->id);
+  }
 }
 
 void basic_test(void) { nlist_test(); }

@@ -68,4 +68,6 @@ static inline nlist_node_t *nlist_remove_last(nlist_t *list) {
   return last;
 }
 
+void nlist_insert_after(nlist_t *list, nlist_node_t *pre, nlist_node_t *node);
+
 #endif
