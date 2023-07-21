@@ -2,6 +2,7 @@
 
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
+#include "net.h"
 #include "sys_plat.h"
 
 static sys_sem_t sem;
@@ -67,6 +68,10 @@ void thread2_entry(void *arg) {
 }
 
 int main(int argc, char **argv) {
+  net_init();
+
+  net_start();
+
   sem = sys_sem_create(0);
   mutex = sys_mutex_create();
   read_sem = sys_sem_create(0);
