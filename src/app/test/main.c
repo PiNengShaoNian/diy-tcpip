@@ -77,7 +77,9 @@ net_err_t netdev_init(void) {
 }
 
 int main(int argc, char **argv) {
-  dbg_info("dbg info");
+  dbg_info(DBG_STYLE_ERROR "dbg info");
+  dbg_info(DBG_STYLE_RESET "dbg info");
+  dbg_info(DBG_STYLE_WARNING "dbg info");
 
   net_init();
 
