@@ -4,6 +4,7 @@
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
 #include "net.h"
+#include "nlist.h"
 #include "sys_plat.h"
 
 static sys_sem_t sem;
@@ -76,6 +77,26 @@ net_err_t netdev_init(void) {
   return NET_ERR_OK;
 }
 
+typedef struct _tnode_t {
+  int id;
+  nlist_node_t node;
+} tnode_t;
+
+void nlist_test(void) {
+#define NODE_CNT 4
+
+  tnode_t node[NODE_CNT];
+  nlist_t list;
+
+  nlist_init(&list);
+  for (int i = 0; i < NODE_CNT; i++) {
+    node[i].id = i;
+    nlist_insert_first(&list, &node[i].node);
+  }
+}
+
+void basic_test(void) { nlist_test(); }
+
 #define DBG_TEST DBG_LEVEL_INFO
 
 int main(int argc, char **argv) {
@@ -84,9 +105,10 @@ int main(int argc, char **argv) {
   dbg_error(DBG_TEST, "error");
 
   dbg_assert(1 == 1, "failed");
-  dbg_assert(1 == 0, "failed");
 
   net_init();
+
+  basic_test();
 
   net_start();
 
