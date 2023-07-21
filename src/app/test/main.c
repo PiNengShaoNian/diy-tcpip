@@ -67,10 +67,20 @@ void thread2_entry(void *arg) {
   }
 }
 
+#include "netif_pcap.h"
+
+net_err_t netdev_init(void) {
+  netif_pcp_open();
+
+  return NET_ERR_OK;
+}
+
 int main(int argc, char **argv) {
   net_init();
 
   net_start();
+
+  netdev_init();
 
   while (1) {
     sys_sleep(10);
