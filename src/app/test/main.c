@@ -83,6 +83,9 @@ int main(int argc, char **argv) {
   dbg_warning(DBG_TEST, "warning");
   dbg_error(DBG_TEST, "error");
 
+  dbg_assert(1 == 1, "failed");
+  dbg_assert(1 == 0, "failed");
+
   net_init();
 
   net_start();

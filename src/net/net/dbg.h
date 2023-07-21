@@ -25,4 +25,14 @@ void dbg_print(int m_level, int s_level, const char *file, const char *func,
   dbg_print(module, DBG_LEVEL_ERROR, __FILE__, __FUNCTION__, __LINE__, fmt, \
             ##__VA_ARGS__)
 
+#define dbg_assert(expr, msg)                                             \
+  do {                                                                    \
+    if (!(expr)) {                                                        \
+      dbg_print(DBG_LEVEL_ERROR, DBG_LEVEL_ERROR, __FILE__, __FUNCTION__, \
+                __LINE__, "assert failed: " #expr "," msg);               \
+      while (1)                                                           \
+        ;                                                                 \
+    }                                                                     \
+  } while (0);
+
 #endif
