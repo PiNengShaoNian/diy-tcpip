@@ -145,6 +145,14 @@ void mblock_test(void) {
   static uint8_t buffer[100][10];
 
   mblock_init(&blist, buffer, 100, 10, NLOCKER_THREAD);
+
+  void *temp[10];
+  for (int i = 0; i < 10; i++) {
+    temp[i] = mblock_alloc(&blist, 0);
+
+    plat_printf("block: %p, free_count: %d\n", temp[i],
+                mblock_free_cnt(&blist));
+  }
 }
 
 void basic_test(void) {
