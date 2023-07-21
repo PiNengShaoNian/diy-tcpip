@@ -56,7 +56,7 @@ typedef uint32_t net_time_t;      // 时间类型
 
 #define SYS_THREAD_INVALID          (task_t *)0
 #define SYS_SEM_INVALID             (sem_t *)0
-#define SYS_MUTEx_INVALID           (mutex_t *)0
+#define SYS_MUTEX_INVALID           (mutex_t *)0
 
 typedef mutex_t * sys_mutex_t;        // 互斥锁
 typedef task_t * sys_thread_t;        // 线程
@@ -87,7 +87,7 @@ typedef DWORD net_time_t;      // 时间类型
 
 #define SYS_THREAD_INVALID          (HANDLE)0
 #define SYS_SEM_INVALID             (HANDLE)0
-#define SYS_MUTEx_INVALID           (HANDLE)0
+#define SYS_MUTEX_INVALID           (HANDLE)0
 
 typedef HANDLE sys_mutex_t;         // 互斥锁
 typedef HANDLE sys_thread_t;        // 线程
@@ -125,7 +125,7 @@ typedef struct timeval net_time_t;      // 时间类型
 
 #define SYS_THREAD_INVALID          (sys_thread_t)0
 #define SYS_SEM_INVALID             (sys_sem_t)0
-#define SYS_MUTEx_INVALID           (sys_mutex_t)0
+#define SYS_MUTEX_INVALID           (sys_mutex_t)0
 
 #define plat_strlen         strlen
 #define plat_strcpy         strcpy

@@ -75,7 +75,7 @@ void sys_sem_notify(sys_sem_t sem) {
 // 互斥信号量：由具体平台实现
 sys_mutex_t sys_mutex_create(void) {
     sys_mutex_t m = (sys_mutex_t)mblock_alloc(&mutex_mblock, -1);
-    if (m != SYS_MUTEx_INVALID) {
+    if (m != SYS_MUTEX_INVALID) {
         mutex_init(m);
     }
     return m;
@@ -234,7 +234,7 @@ void sys_sem_notify(sys_sem_t sem) {
 sys_mutex_t sys_mutex_create(void) {
     sys_mutex_t mutex = CreateMutex(NULL, FALSE, NULL); // 初始不被占用
     if (mutex == NULL) {
-        return SYS_MUTEx_INVALID;
+        return SYS_MUTEX_INVALID;
     }
     return mutex;
 }
