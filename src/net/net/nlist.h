@@ -22,6 +22,10 @@ static inline void nlist_node_set_next(nlist_node_t *node, nlist_node_t *next) {
   node->next = next;
 }
 
+static inline void nlist_node_set_pre(nlist_node_t *node, nlist_node_t *pre) {
+  node->pre = pre;
+}
+
 typedef struct _nlist_t {
   nlist_node_t *first;
   nlist_node_t *last;

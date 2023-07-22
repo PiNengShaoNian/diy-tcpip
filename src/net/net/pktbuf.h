@@ -21,5 +21,7 @@ typedef struct _pktbuf_t {
 } pktbuf_t;
 
 net_err_t pktbuf_init(void);
+pktbuf_t *pktbuf_alloc(int size);
+void pktbuf_free(pktbuf_t *buf);
 
 #endif
