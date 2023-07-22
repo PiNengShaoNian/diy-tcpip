@@ -280,6 +280,10 @@ net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
     }
 
     pktbuf_insert_blk_list(buf, blk, 1);
+  } else if (to_size == 0) {
+    pktblock_free_list(pktbuf_first_blk(buf));
+    buf->total_size = 0;
+    nlist_init(&buf->blk_list);
   } else if (to_size > buf->total_size) {
     pktblk_t *tail_blk = pktbuf_last_blk(buf);
 
@@ -299,8 +303,37 @@ net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
       buf->total_size += remain_size;
       pktbuf_insert_blk_list(buf, new_blks, 1);
     }
+  } else {
+    int total_size = 0;
+    pktblk_t *tail_blk;
+    for (tail_blk = pktbuf_first_blk(buf); tail_blk;
+         tail_blk = pktblk_blk_next(tail_blk)) {
+      total_size += tail_blk->size;
+      if (total_size >= to_size) {
+        break;
+      }
+    }
+
+    if (tail_blk == (pktblk_t *)0) {
+      return NET_ERR_SIZE;
+    }
+
+    total_size = 0;
+    pktblk_t *curr_blk = pktblk_blk_next(tail_blk);
+    while (curr_blk) {
+      pktblk_t *next_blk = pktblk_blk_next(curr_blk);
+
+      total_size += curr_blk->size;
+      nlist_remove(&buf->blk_list, &curr_blk->node);
+      pktblock_free(curr_blk);
+
+      curr_blk = next_blk;
+    }
+
+    tail_blk->size -= buf->total_size - total_size - to_size;
+    buf->total_size = to_size;
   }
 
   display_check_buf(buf);
-  return NET_ERR_SIZE;
+  return NET_ERR_OK;
 }

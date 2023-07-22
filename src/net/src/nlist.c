@@ -40,7 +40,7 @@ nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node) {
   }
 
   if (node->pre) {
-    node->pre = node->next;
+    node->pre->next = node->next;
   }
 
   if (node->next) {
