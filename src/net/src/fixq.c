@@ -91,3 +91,17 @@ void *fixq_recv(fixq_t *q, int tmo) {
   sys_sem_notify(q->send_sem);
   return msg;
 }
+
+void fixq_destroy(fixq_t *q) {
+  nlocker_destroy(&q->locker);
+  sys_sem_free(q->send_sem);
+  sys_sem_free(q->recv_sem);
+}
+
+int fixq_count(fixq_t *q) {
+  nlocker_lock(&q->locker);
+  int count = q->cnt;
+  nlocker_unlock(&q->locker);
+
+  return count;
+}
