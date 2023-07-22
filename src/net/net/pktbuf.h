@@ -34,7 +34,13 @@ static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
   return (pktblk_t *)nlist_entry(first, pktblk_t, node);
 }
 
+static inline pktblk_t *pktbuf_last_blk(pktbuf_t *buf) {
+  nlist_node_t *last = nlist_last(&buf->blk_list);
+  return (pktblk_t *)nlist_entry(last, pktblk_t, node);
+}
+
 net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
 net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
 
 #endif

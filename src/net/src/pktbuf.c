@@ -266,3 +266,41 @@ net_err_t pktbuf_remove_header(pktbuf_t *buf, int size) {
   display_check_buf(buf);
   return NET_ERR_OK;
 }
+
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
+  if (to_size == buf->total_size) {
+    return NET_ERR_OK;
+  }
+
+  if (buf->total_size == 0) {
+    pktblk_t *blk = pktblock_alloc_list(to_size, 0);
+    if (!blk) {
+      dbg_error(DBG_BUF, "no block");
+      return NET_ERR_MEM;
+    }
+
+    pktbuf_insert_blk_list(buf, blk, 1);
+  } else if (to_size > buf->total_size) {
+    pktblk_t *tail_blk = pktbuf_last_blk(buf);
+
+    int inc_size = to_size - buf->total_size;
+    int remain_size = curr_blk_tail_free(tail_blk);
+    if (remain_size >= inc_size) {
+      tail_blk->size += inc_size;
+      buf->total_size += inc_size;
+    } else {
+      pktblk_t *new_blks = pktblock_alloc_list(inc_size - remain_size, 0);
+      if (!new_blks) {
+        dbg_error(DBG_BUF, "no block");
+        return NET_ERR_MEM;
+      }
+
+      tail_blk->size += remain_size;
+      buf->total_size += remain_size;
+      pktbuf_insert_blk_list(buf, new_blks, 1);
+    }
+  }
+
+  display_check_buf(buf);
+  return NET_ERR_SIZE;
+}
