@@ -34,4 +34,6 @@ static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
   return (pktblk_t *)nlist_entry(first, pktblk_t, node);
 }
 
+net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
+
 #endif

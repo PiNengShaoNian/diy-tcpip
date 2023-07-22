@@ -166,6 +166,11 @@ void mblock_test(void) {
 void pktbuf_test(void) {
   pktbuf_t *buf = pktbuf_alloc(2000);
   pktbuf_free(buf);
+
+  buf = pktbuf_alloc(2000);
+  for (int i = 0; i < 16; i++) {
+    pktbuf_add_header(buf, 33, 1);
+  }
 }
 
 void basic_test(void) {
