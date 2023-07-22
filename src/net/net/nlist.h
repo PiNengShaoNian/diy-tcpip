@@ -1,6 +1,8 @@
 #ifndef NLIST_H
 #define NLIST_H
 
+#include <stddef.h>
+
 typedef struct _nlist_node_t {
   struct _nlist_node_t *pre;
   struct _nlist_node_t *next;

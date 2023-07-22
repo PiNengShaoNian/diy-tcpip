@@ -24,4 +24,9 @@ net_err_t pktbuf_init(void);
 pktbuf_t *pktbuf_alloc(int size);
 void pktbuf_free(pktbuf_t *buf);
 
+static inline pktblk_t *pktblk_blk_next(pktblk_t *blk) {
+  nlist_node_t *next = nlist_node_next(&blk->node);
+  return (pktblk_t *)nlist_entry(next, pktblk_t, node);
+}
+
 #endif
