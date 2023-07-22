@@ -29,4 +29,9 @@ static inline pktblk_t *pktblk_blk_next(pktblk_t *blk) {
   return (pktblk_t *)nlist_entry(next, pktblk_t, node);
 }
 
+static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
+  nlist_node_t *first = nlist_first(&buf->blk_list);
+  return (pktblk_t *)nlist_entry(first, pktblk_t, node);
+}
+
 #endif
