@@ -175,6 +175,14 @@ void pktbuf_test(void) {
   for (int i = 0; i < 16; i++) {
     pktbuf_remove_header(buf, 33);
   }
+
+  for (int i = 0; i < 16; i++) {
+    pktbuf_add_header(buf, 33, 0);
+  }
+
+  for (int i = 0; i < 16; i++) {
+    pktbuf_remove_header(buf, 33);
+  }
 }
 
 void basic_test(void) {
