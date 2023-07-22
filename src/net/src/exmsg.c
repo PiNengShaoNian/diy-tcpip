@@ -33,10 +33,13 @@ net_err_t exmsg_init(void) {
 }
 
 static void work_thread(void *arg) {
-  plat_printf("exmsg running...\n");
+  dbg_info(DBG_MSG, "exmsg running...\n");
 
   while (1) {
-    sys_sleep(1);
+    exmsg_t *msg = (exmsg_t *)fixq_recv(&msg_queue, 0);
+
+    plat_printf("recv a msg type: %d, id: %d\n", msg->type, msg->id);
+    mblock_free(&msg_block, msg);
   }
 }
 

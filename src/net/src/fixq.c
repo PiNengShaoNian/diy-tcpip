@@ -67,3 +67,27 @@ net_err_t fixq_send(fixq_t *q, void *msg, int tmo) {
   sys_sem_notify(q->recv_sem);
   return NET_ERR_OK;
 }
+
+void *fixq_recv(fixq_t *q, int tmo) {
+  nlocker_lock(&q->locker);
+  if (!q->cnt && (tmo < 0)) {
+    nlocker_unlock(&q->locker);
+    return (void *)0;
+  }
+  nlocker_unlock(&q->locker);
+
+  if (sys_sem_wait(q->recv_sem, tmo) < 0) {
+    return (void *)0;
+  }
+
+  nlocker_lock(&q->locker);
+  void *msg = q->buf[q->out++];
+  if (q->out >= q->size) {
+    q->out = 0;
+  }
+  q->cnt--;
+  nlocker_unlock(&q->locker);
+
+  sys_sem_notify(q->send_sem);
+  return msg;
+}
