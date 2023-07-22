@@ -81,6 +81,14 @@ pktblk_t *pktblock_alloc(void) {
   return block;
 }
 
+static void pktblock_free_list(pktblk_t *first) {
+  while (first) {
+    pktblk_t *next_block = pktblk_blk_next(first);
+    mblock_free(&block_list, first);
+    first = next_block;
+  }
+}
+
 static pktblk_t *pktblock_alloc_list(int size, int add_front) {
   pktblk_t *first_block = (pktblk_t *)0;
   pktblk_t *pre_block = (pktblk_t *)0;
@@ -89,6 +97,11 @@ static pktblk_t *pktblock_alloc_list(int size, int add_front) {
     pktblk_t *new_block = pktblock_alloc();
     if (!new_block) {
       dbg_error(DBG_BUF, "no buffer for alloc(%d)", size);
+      if (first_block) {
+        nlocker_lock(&locker);
+        pktblock_free_list(first_block);
+        nlocker_unlock(&locker);
+      }
       return (pktblk_t *)0;
     }
 
@@ -177,4 +190,7 @@ pktbuf_t *pktbuf_alloc(int size) {
   return buf;
 }
 
-void pktbuf_free(pktbuf_t *buf) {}
+void pktbuf_free(pktbuf_t *buf) {
+  pktblock_free_list(pktbuf_first_blk(buf));
+  mblock_free(&pktbuf_list, buf);
+}
