@@ -43,3 +43,27 @@ init_failed:
   nlocker_destroy(&q->locker);
   return err;
 }
+
+net_err_t fixq_send(fixq_t *q, void *msg, int tmo) {
+  nlocker_lock(&q->locker);
+  if ((tmo < 0) && q->cnt >= q->size) {
+    nlocker_unlock(&q->locker);
+    return NET_ERR_FULL;
+  }
+  nlocker_unlock(&q->locker);
+
+  if (sys_sem_wait(q->send_sem, tmo)) {
+    return NET_ERR_TMO;
+  }
+
+  nlocker_lock(&q->locker);
+  q->buf[q->in++] = msg;
+  if (q->in >= q->size) {
+    q->in = 0;
+  }
+  q->cnt++;
+  nlocker_unlock(&q->locker);
+
+  sys_sem_notify(q->recv_sem);
+  return NET_ERR_OK;
+}

@@ -49,3 +49,24 @@ net_err_t exmsg_start(void) {
 
   return NET_ERR_OK;
 }
+
+net_err_t exmsg_netif_in(void) {
+  exmsg_t *msg = mblock_alloc(&msg_block, -1);
+  if (!msg) {
+    dbg_warning(DBG_MSG, "no free msg");
+    return NET_ERR_MEM;
+  }
+
+  static int id = 0;
+  msg->type = NET_EXMSG_NETIF_IN;
+  msg->id = id++;
+
+  net_err_t err = fixq_send(&msg_queue, msg, -1);
+  if (err < 0) {
+    dbg_warning(DBG_MSG, "fixq full");
+    mblock_free(&msg_block, msg);
+    return err;
+  }
+
+  return err;
+}
