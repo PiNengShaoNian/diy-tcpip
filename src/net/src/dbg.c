@@ -39,3 +39,30 @@ void dbg_print(int m_level, int s_level, const char *file, const char *func,
     va_end(args);
   }
 }
+
+void dbg_dump_hwaddr(const char *msg, const uint8_t *hwaddr, int len) {
+  if (msg) {
+    plat_printf("%s", msg);
+  }
+
+  if (len) {
+    for (int i = 0; i < len; i++) {
+      plat_printf("%02x-", hwaddr[i]);
+    }
+  } else {
+    plat_printf("none");
+  }
+}
+
+void dbg_dump_ip(const char *msg, ipaddr_t *ip) {
+  if (msg) {
+    plat_printf("%s", msg);
+  }
+
+  if (ip) {
+    plat_printf("%d.%d.%d.%d", ip->a_addr[0], ip->a_addr[1], ip->a_addr[2],
+                ip->a_addr[3]);
+  } else {
+    plat_printf("0.0.0.0");
+  }
+}

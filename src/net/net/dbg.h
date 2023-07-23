@@ -1,6 +1,7 @@
 #ifndef DBG_H
 #define DBG_H
 
+#include "ipaddr.h"
 #include "net_cfg.h"
 
 #define DBG_STYLE_ERROR "\033[31m"
@@ -14,6 +15,8 @@
 
 void dbg_print(int m_level, int s_level, const char *file, const char *func,
                int line, const char *fmt, ...);
+void dbg_dump_hwaddr(const char *msg, const uint8_t *hwaddr, int len);
+void dbg_dump_ip(const char *msg, ipaddr_t *ip);
 
 #define dbg_info(module, fmt, ...)                                         \
   dbg_print(module, DBG_LEVEL_INFO, __FILE__, __FUNCTION__, __LINE__, fmt, \
