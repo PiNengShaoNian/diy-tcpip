@@ -43,5 +43,6 @@ net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
 net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
 net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
 net_err_t pktbuf_join(pktbuf_t *dest, pktbuf_t *src);
+net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
 
 #endif
