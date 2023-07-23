@@ -19,5 +19,7 @@ typedef struct _ipaddr_t {
 
 void ipaddr_set_any(ipaddr_t* ip);
 net_err_t ipaddr_from_str(ipaddr_t* dest, const char* str);
+void ipaddr_copy(ipaddr_t* dest, ipaddr_t* src);
+ipaddr_t* ipaddr_get_any();
 
 #endif

@@ -85,3 +85,17 @@ fail:
   mblock_free(&netif_mblock, netif);
   return (netif_t *)0;
 }
+
+net_err_t netif_set_addr(netif_t *netif, ipaddr_t *ip, ipaddr_t *netmask,
+                         ipaddr_t *gateway) {
+  ipaddr_copy(&netif->ipaddr, ip ? ip : ipaddr_get_any());
+  ipaddr_copy(&netif->netmask, netmask ? netmask : ipaddr_get_any());
+  ipaddr_copy(&netif->gateway, gateway ? gateway : ipaddr_get_any());
+  return NET_ERR_OK;
+}
+
+net_err_t netif_set_hwaddr(netif_t *netif, const char *hwaddr, int len) {
+  plat_memcpy(netif->hwaddr.addr, hwaddr, len);
+  netif->hwaddr.len = len;
+  return NET_ERR_OK;
+}

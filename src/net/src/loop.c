@@ -32,6 +32,8 @@ net_err_t loop_init(void) {
   ipaddr_from_str(&ip, "127.0.0.1");
   ipaddr_from_str(&mask, "255.0.0.0");
 
+  netif_set_addr(netif, &ip, &mask, (ipaddr_t *)0);
+
   dbg_info(DBG_NETIF, "init done");
   return NET_ERR_OK;
 }
