@@ -462,3 +462,29 @@ net_err_t pktbuf_write(pktbuf_t *buf, uint8_t *src, int size) {
 
   return NET_ERR_OK;
 }
+
+net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dest, int size) {
+  if (!dest || !size) {
+    return NET_ERR_PARAM;
+  }
+
+  int remain_size = total_blk_remain(buf);
+  if (remain_size < size) {
+    dbg_error(DBG_BUF, "size error: %d < %d", remain_size, size);
+    return NET_ERR_SIZE;
+  }
+
+  while (size) {
+    int blk_size = curr_blk_remain(buf);
+
+    int curr_copy = size > blk_size ? blk_size : size;
+
+    plat_memcpy(dest, buf->blk_offset, curr_copy);
+    dest += curr_copy;
+    size -= curr_copy;
+
+    move_forward(buf, curr_copy);
+  }
+
+  return NET_ERR_OK;
+}

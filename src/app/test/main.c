@@ -230,6 +230,16 @@ void pktbuf_test(void) {
     temp[i] = i;
   }
   pktbuf_write(buf, (uint8_t *)temp, pktbuf_total(buf));
+
+  static uint16_t read_temp[1000];
+  plat_memset(read_temp, 0, sizeof(read_temp));
+
+  pktbuf_reset_acc(buf);
+  pktbuf_read(buf, (uint8_t *)read_temp, pktbuf_total(buf));
+  if (plat_memcmp(temp, read_temp, pktbuf_total(buf)) != 0) {
+    plat_printf("not equal");
+    return;
+  }
 }
 
 void basic_test(void) {

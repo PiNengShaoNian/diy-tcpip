@@ -52,5 +52,6 @@ net_err_t pktbuf_join(pktbuf_t *dest, pktbuf_t *src);
 net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
 void pktbuf_reset_acc(pktbuf_t *buf);
 int pktbuf_write(pktbuf_t *buf, uint8_t *src, int size);
+net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dest, int size);
 
 #endif
