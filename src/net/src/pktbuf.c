@@ -11,6 +11,18 @@ static mblock_t block_list;
 static pktbuf_t pktbuf_buffer[PKTBUF_BUF_CNT];
 static mblock_t pktbuf_list;
 
+static inline int total_blk_remain(pktbuf_t *buf) {
+  return buf->total_size - buf->pos;
+}
+
+static int curr_blk_remain(pktbuf_t *buf) {
+  pktblk_t *block = buf->curr_blk;
+  if (!block) {
+    return 0;
+  }
+  return (int)(buf->curr_blk->data + block->size - buf->blk_offset);
+}
+
 static inline int curr_blk_tail_free(pktblk_t *blk) {
   return (int)(blk->payload + PKTBUF_BLK_SIZE - (blk->data + blk->size));
 }
@@ -408,4 +420,45 @@ void pktbuf_reset_acc(pktbuf_t *buf) {
     buf->curr_blk = pktbuf_first_blk(buf);
     buf->blk_offset = buf->curr_blk ? buf->curr_blk->data : (uint8_t *)0;
   }
+}
+
+static void move_forward(pktbuf_t *buf, int size) {
+  buf->pos += size;
+  buf->blk_offset += size;
+
+  pktblk_t *curr = buf->curr_blk;
+  if (buf->blk_offset >= curr->data + curr->size) {
+    buf->curr_blk = pktblk_blk_next(curr);
+    if (buf->curr_blk) {
+      buf->blk_offset = buf->curr_blk->data;
+    } else {
+      buf->blk_offset = (uint8_t *)0;
+    }
+  }
+}
+
+net_err_t pktbuf_write(pktbuf_t *buf, uint8_t *src, int size) {
+  if (!src || !size) {
+    return NET_ERR_PARAM;
+  }
+
+  int remain_size = total_blk_remain(buf);
+  if (remain_size < size) {
+    dbg_error(DBG_BUF, "size error: %d < %d", remain_size, size);
+    return NET_ERR_SIZE;
+  }
+
+  while (size) {
+    int blk_size = curr_blk_remain(buf);
+
+    int curr_copy = size > blk_size ? blk_size : size;
+
+    plat_memcpy(buf->blk_offset, src, curr_copy);
+    src += curr_copy;
+    size -= curr_copy;
+
+    move_forward(buf, curr_copy);
+  }
+
+  return NET_ERR_OK;
 }
