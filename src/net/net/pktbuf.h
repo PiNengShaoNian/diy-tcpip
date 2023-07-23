@@ -54,5 +54,6 @@ void pktbuf_reset_acc(pktbuf_t *buf);
 int pktbuf_write(pktbuf_t *buf, uint8_t *src, int size);
 net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dest, int size);
 net_err_t pktbuf_seek(pktbuf_t *buf, int offset);
+net_err_t pktbuf_copy(pktbuf_t *dest, pktbuf_t *src, int size);
 
 #endif
