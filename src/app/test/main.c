@@ -5,6 +5,7 @@
 #include "echo/tcp_echo_server.h"
 #include "mblock.h"
 #include "net.h"
+#include "netif.h"
 #include "nlist.h"
 #include "pktbuf.h"
 #include "sys_plat.h"
