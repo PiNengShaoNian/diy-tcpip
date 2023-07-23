@@ -240,6 +240,22 @@ void pktbuf_test(void) {
     plat_printf("not equal");
     return;
   }
+
+  plat_memset(read_temp, 0, sizeof(read_temp));
+  pktbuf_seek(buf, 18 * 2);
+  pktbuf_read(buf, (uint8_t *)read_temp, 56);
+  if (plat_memcmp(temp + 18, read_temp, 56) != 0) {
+    plat_printf("not equal");
+    return;
+  }
+
+  plat_memset(read_temp, 0, sizeof(read_temp));
+  pktbuf_seek(buf, 85 * 2);
+  pktbuf_read(buf, (uint8_t *)read_temp, 256);
+  if (plat_memcmp(temp + 85, read_temp, 256) != 0) {
+    plat_printf("not equal");
+    return;
+  }
 }
 
 void basic_test(void) {
