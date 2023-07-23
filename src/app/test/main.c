@@ -293,6 +293,7 @@ void basic_test(void) {
   nlist_test();
   mblock_test();
   pktbuf_test();
+  netif_t *netif = netif_open("pcap");
 }
 
 #define DBG_TEST DBG_LEVEL_INFO
