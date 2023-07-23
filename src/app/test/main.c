@@ -215,6 +215,15 @@ void pktbuf_test(void) {
   pktbuf_set_cont(buf, 135);
 
   pktbuf_free(buf);
+
+  buf = pktbuf_alloc(32);
+  pktbuf_join(buf, pktbuf_alloc(4));
+  pktbuf_join(buf, pktbuf_alloc(16));
+  pktbuf_join(buf, pktbuf_alloc(54));
+  pktbuf_join(buf, pktbuf_alloc(32));
+  pktbuf_join(buf, pktbuf_alloc(38));
+  pktbuf_join(buf, pktbuf_alloc(512));
+  pktbuf_reset_acc(buf);
 }
 
 void basic_test(void) {
