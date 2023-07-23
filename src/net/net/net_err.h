@@ -10,6 +10,7 @@ typedef enum _net_err_t {
   NET_ERR_SIZE = -5,
   NET_ERR_NONE = -6,
   NET_ERR_PARAM = -7,
+  NET_ERR_STATE = -8,
 } net_err_t;
 
 #endif
