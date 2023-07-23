@@ -5,6 +5,7 @@
 
 #include "fixq.h"
 #include "ipaddr.h"
+#include "net_cfg.h"
 #include "nlist.h"
 
 typedef struct _netif_hwaddr_t {
@@ -43,5 +44,7 @@ typedef struct _netif_t {
   fixq_t out_q;
   void *out_q_buf[NETIF_OUTQ_SIZE];
 } netif_t;
+
+net_err_t netif_init(void);
 
 #endif
