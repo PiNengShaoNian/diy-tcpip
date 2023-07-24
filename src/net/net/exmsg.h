@@ -5,6 +5,10 @@
 #include "netif.h"
 #include "nlist.h"
 
+typedef struct _msg_netif_t {
+  netif_t *netif;
+} msg_netif_t;
+
 typedef struct _exmsg_t {
   nlist_node_t node;
 
@@ -12,7 +16,9 @@ typedef struct _exmsg_t {
     NET_EXMSG_NETIF_IN,
   } type;
 
-  int id;
+  union {
+    msg_netif_t netif;
+  };
 } exmsg_t;
 
 net_err_t exmsg_init(void);

@@ -8,11 +8,28 @@
 
 void recv_thread(void *arg) {
   plat_printf("recv thread is running...\n");
+  netif_t *netif = (netif_t *)arg;
+  pcap_t *pcap = (pcap_t *)netif->ops_data;
 
   while (1) {
-    sys_sleep(1);
+    struct pcap_pkthdr *pkthdr;
+    const uint8_t *pkt_data;
+    if (pcap_next_ex(pcap, &pkthdr, &pkt_data) != 1) {
+      continue;
+    }
 
-    exmsg_netif_in((netif_t *)0);
+    pktbuf_t *buf = pktbuf_alloc(pkthdr->len);
+    if (buf == (pktbuf_t *)0) {
+      dbg_warning(DBG_NETIF, "buf == NULL");
+      continue;
+    }
+
+    pktbuf_write(buf, (uint8_t *)pkt_data, pkthdr->len);
+    if (netif_put_in(netif, buf, 0) < 0) {
+      dbg_warning(DBG_NETIF, "netif %s in_q full", netif->name);
+      pktbuf_free(buf);
+      continue;
+    }
   }
 }
 
