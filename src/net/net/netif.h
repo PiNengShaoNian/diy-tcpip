@@ -7,6 +7,7 @@
 #include "ipaddr.h"
 #include "net_cfg.h"
 #include "nlist.h"
+#include "pktbuf.h"
 
 typedef struct _netif_hwaddr_t {
   uint8_t addr[NETIF_HWADDR_SIZE];
@@ -67,5 +68,10 @@ net_err_t netif_set_active(netif_t *netif);
 net_err_t netif_set_deactivate(netif_t *netif);
 net_err_t netif_close(netif_t *netif);
 void netif_set_default(netif_t *netif);
+
+net_err_t netif_put_in(netif_t *netif, pktbuf_t *buf, int tmo);
+pktbuf_t *netif_get_in(netif_t *netif, int tmo);
+net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo);
+pktbuf_t *netif_get_out(netif_t *netif, int tmo);
 
 #endif
