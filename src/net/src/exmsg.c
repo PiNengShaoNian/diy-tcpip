@@ -39,9 +39,14 @@ static net_err_t do_netif_in(exmsg_t *msg) {
   while ((buf = netif_get_in(netif, -1))) {
     dbg_info(DBG_MSG, "recv a packet ");
 
-    pktbuf_fill(buf, 0x11, 6);
-    net_err_t err = netif_out(netif, (ipaddr_t *)0, buf);
-    if (err < 0) {
+    if (netif->link_layer) {
+      net_err_t err = netif->link_layer->in(netif, buf);
+
+      if (err < 0) {
+        pktbuf_free(buf);
+        dbg_warning(DBG_MSG, "netif in failed, error=%d", err);
+      }
+    } else {
       pktbuf_free(buf);
     }
   }

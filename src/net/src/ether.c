@@ -8,7 +8,34 @@ net_err_t ether_open(struct _netif_t *netif) { return NET_ERR_OK; }
 
 void ether_close(struct _netif_t *netif) {}
 
-net_err_t ether_in(struct _netif_t *netif, pktbuf_t *buf) { return NET_ERR_OK; }
+static net_err_t is_pkt_ok(ether_pkt_t *frame, int total_size) {
+  if (total_size > sizeof(ether_hdr_t) + ETHER_MTU) {
+    dbg_warning(DBG_ETHER, "frame size too big: %d", total_size);
+    return NET_ERR_SIZE;
+  }
+
+  if (total_size < sizeof(ether_hdr_t)) {
+    dbg_warning(DBG_ETHER, "frame size too small: %d", total_size);
+    return NET_ERR_SIZE;
+  }
+
+  return NET_ERR_OK;
+}
+
+net_err_t ether_in(struct _netif_t *netif, pktbuf_t *buf) {
+  dbg_info(DBG_ETHER, "ether in");
+
+  ether_pkt_t *pkt = (ether_pkt_t *)pktbuf_data(buf);
+
+  net_err_t err;
+  if ((err = is_pkt_ok(pkt, buf->total_size)) < 0) {
+    dbg_warning(DBG_ETHER, "ether pkt error");
+    return err;
+  }
+
+  pktbuf_free(buf);
+  return NET_ERR_OK;
+}
 
 net_err_t ether_out(struct _netif_t *netif, ipaddr_t *dest, pktbuf_t *buf) {
   return NET_ERR_OK;
