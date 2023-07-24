@@ -156,6 +156,10 @@ net_err_t netif_set_active(netif_t *netif) {
     return NET_ERR_STATE;
   }
 
+  if (!netif_default && (netif->type != NETIF_TYPE_LOOP)) {
+    netif_set_default(netif);
+  }
+
   netif->state = NETIF_ACTIVE;
   display_netif_list();
 
@@ -186,3 +190,21 @@ net_err_t netif_set_deactivate(netif_t *netif) {
 
   return NET_ERR_OK;
 }
+
+net_err_t netif_close(netif_t *netif) {
+  if (netif->state == NETIF_ACTIVE) {
+    dbg_error(DBG_NETIF, "netif is active");
+    return NET_ERR_STATE;
+  }
+
+  netif->ops->close(netif);
+  netif->state = NETIF_CLOSED;
+
+  nlist_remove(&netif_list, &netif->node);
+
+  mblock_free(&netif_mblock, netif);
+  display_netif_list();
+  return NET_ERR_OK;
+}
+
+void netif_set_default(netif_t *netif) { netif_default = netif; }

@@ -65,5 +65,7 @@ net_err_t netif_set_addr(netif_t *netif, ipaddr_t *ip, ipaddr_t *netmask,
 net_err_t netif_set_hwaddr(netif_t *netif, const char *hwaddr, int len);
 net_err_t netif_set_active(netif_t *netif);
 net_err_t netif_set_deactivate(netif_t *netif);
+net_err_t netif_close(netif_t *netif);
+void netif_set_default(netif_t *netif);
 
 #endif
