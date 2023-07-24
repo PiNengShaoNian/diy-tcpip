@@ -9,6 +9,7 @@
 #include "nlist.h"
 #include "pktbuf.h"
 #include "sys_plat.h"
+#include "tools.h"
 
 static sys_sem_t sem;
 static sys_mutex_t mutex;
@@ -309,6 +310,9 @@ void basic_test(void) {
   nlist_test();
   mblock_test();
   pktbuf_test();
+
+  uint32_t v1 = x_ntohl(0x12345678);
+  uint32_t v2 = x_ntohs(0x1234);
 }
 
 #define DBG_TEST DBG_LEVEL_INFO
@@ -322,7 +326,7 @@ int main(int argc, char **argv) {
 
   net_init();
 
-  // basic_test();
+  basic_test();
 
   net_start();
 
