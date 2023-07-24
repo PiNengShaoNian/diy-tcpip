@@ -49,9 +49,6 @@ net_err_t loop_init(void) {
 
   netif_set_active(netif);
 
-  pktbuf_t *buf = pktbuf_alloc(100);
-  netif_out(netif, (ipaddr_t *)0, buf);
-
   dbg_info(DBG_NETIF, "init done");
   return NET_ERR_OK;
 }

@@ -38,7 +38,12 @@ static net_err_t do_netif_in(exmsg_t *msg) {
   pktbuf_t *buf;
   while ((buf = netif_get_in(netif, -1))) {
     dbg_info(DBG_MSG, "recv a packet ");
-    pktbuf_free(buf);
+
+    pktbuf_fill(buf, 0x11, 6);
+    net_err_t err = netif_out(netif, (ipaddr_t *)0, buf);
+    if (err < 0) {
+      pktbuf_free(buf);
+    }
   }
 
   return NET_ERR_OK;
