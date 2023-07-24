@@ -217,7 +217,7 @@ net_err_t netif_put_in(netif_t *netif, pktbuf_t *buf, int tmo) {
     return NET_ERR_FULL;
   }
 
-  exmsg_netif_in();
+  exmsg_netif_in(netif);
   return NET_ERR_OK;
 }
 
@@ -251,4 +251,14 @@ pktbuf_t *netif_get_out(netif_t *netif, int tmo) {
 
   dbg_info(DBG_NETIF, "netif out_q empty");
   return (pktbuf_t *)0;
+}
+
+net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
+  net_err_t err = netif_put_out(netif, buf, -1);
+  if (err < 0) {
+    dbg_info(DBG_NETIF, "send failed, queue full");
+    return err;
+  }
+
+  return netif->ops->xmit(netif);
 }

@@ -2,7 +2,9 @@
 #define EXMSG_H
 
 #include "net_err.h"
+#include "netif.h"
 #include "nlist.h"
+
 typedef struct _exmsg_t {
   nlist_node_t node;
 
@@ -15,6 +17,6 @@ typedef struct _exmsg_t {
 
 net_err_t exmsg_init(void);
 net_err_t exmsg_start(void);
-net_err_t exmsg_netif_in(void);
+net_err_t exmsg_netif_in(netif_t *netif);
 
 #endif

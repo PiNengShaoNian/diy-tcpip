@@ -306,7 +306,7 @@ int main(int argc, char **argv) {
 
   net_init();
 
-  basic_test();
+  // basic_test();
 
   net_start();
 
