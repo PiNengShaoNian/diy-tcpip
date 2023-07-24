@@ -1,6 +1,7 @@
 #include "net.h"
 
 #include "dbg.h"
+#include "ether.h"
 #include "exmsg.h"
 #include "loop.h"
 #include "net_plat.h"
@@ -17,6 +18,8 @@ net_err_t net_init(void) {
   netif_init();
 
   loop_init();
+  ether_init();
+
   return NET_ERR_OK;
 }
 
