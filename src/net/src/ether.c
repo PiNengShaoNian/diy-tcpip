@@ -92,3 +92,56 @@ net_err_t ether_init(void) {
 
   return NET_ERR_OK;
 }
+
+const uint8_t *ether_broadcast_addr(void) {
+  static const uint8_t broadcast[] = {
+      0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+  };
+
+  return broadcast;
+}
+
+net_err_t ether_raw_out(netif_t *netif, uint16_t protocol, const uint8_t *dest,
+                        pktbuf_t *buf) {
+  net_err_t err;
+  int size = pktbuf_total(buf);
+  if (size < ETHER_DATA_MIN) {
+    dbg_info(DBG_ETHER, "resize from %d to %d", size, ETHER_DATA_MIN);
+
+    err = pktbuf_resize(buf, ETHER_DATA_MIN);
+    if (err < 0) {
+      dbg_error(DBG_ETHER, "resize error");
+      return err;
+    }
+
+    pktbuf_reset_acc(buf);
+    pktbuf_seek(buf, size);
+    pktbuf_fill(buf, 0, ETHER_DATA_MIN - size);
+    size = ETHER_DATA_MIN;
+  }
+
+  err = pktbuf_add_header(buf, sizeof(ether_hdr_t), 1);
+  if (err < 0) {
+    dbg_error(DBG_ETHER, "add header error: %d", err);
+    return NET_ERR_SIZE;
+  }
+
+  ether_pkt_t *pkt = (ether_pkt_t *)pktbuf_data(buf);
+  plat_memcpy(pkt->hdr.dest, dest, ETHER_HWA_SIZE);
+  plat_memcpy(pkt->hdr.src, netif->hwaddr.addr, ETHER_HWA_SIZE);
+  pkt->hdr.protocol = x_htons(protocol);
+
+  display_ether_pkt("ether out", pkt, size);
+
+  if (plat_memcmp(netif->hwaddr.addr, dest, ETHER_HWA_SIZE) == 0) {
+    return netif_put_in(netif, buf, -1);
+  } else {
+    err = netif_put_out(netif, buf, -1);
+    if (err < 0) {
+      dbg_warning(DBG_ETHER, "put pkt out failed.");
+      return err;
+    }
+
+    return netif->ops->xmit(netif);
+  }
+}

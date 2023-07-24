@@ -1,9 +1,11 @@
 #include "netif.h"
 
 #include "dbg.h"
+#include "ether.h"
 #include "exmsg.h"
 #include "mblock.h"
 #include "pktbuf.h"
+#include "protocol.h"
 
 static netif_t netif_buffer[NETIF_DEV_CNT];
 static mblock_t netif_mblock;
@@ -298,11 +300,23 @@ pktbuf_t *netif_get_out(netif_t *netif, int tmo) {
 }
 
 net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf) {
-  net_err_t err = netif_put_out(netif, buf, -1);
-  if (err < 0) {
-    dbg_info(DBG_NETIF, "send failed, queue full");
-    return err;
-  }
+  if (netif->link_layer) {
+    net_err_t err =
+        ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
 
-  return netif->ops->xmit(netif);
+    if (err < 0) {
+      dbg_warning(DBG_NETIF, "netif link out err");
+      return err;
+    }
+
+    return NET_ERR_OK;
+  } else {
+    net_err_t err = netif_put_out(netif, buf, -1);
+    if (err < 0) {
+      dbg_info(DBG_NETIF, "send failed, queue full");
+      return err;
+    }
+
+    return netif->ops->xmit(netif);
+  }
 }
