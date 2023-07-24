@@ -1,6 +1,7 @@
 #include "netif_pcap.h"
 
 #include "dbg.h"
+#include "ether.h"
 #include "exmsg.h"
 #include "netif.h"
 #include "pcap.h"
@@ -69,7 +70,7 @@ static net_err_t netif_pcap_open(netif_t *netif, void *data) {
   }
 
   netif->type = NETIF_TYPE_ETHER;
-  netif->mtu = 1500;
+  netif->mtu = ETHER_MTU;
   netif->ops_data = pcap;
   netif_set_hwaddr(netif, dev_data->hwaddr, 6);
 
