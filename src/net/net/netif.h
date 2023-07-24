@@ -31,6 +31,15 @@ typedef struct _netif_ops_t {
   net_err_t (*xmit)(struct _netif_t *netif);
 } netif_ops_t;
 
+typedef struct _link_layer_t {
+  netif_type_t type;
+
+  net_err_t (*open)(struct _netif_t *netif);
+  void (*close)(struct _netif_t *netif);
+  net_err_t (*in)(struct _netif_t *netif, pktbuf_t *buf);
+  net_err_t (*out)(struct _netif_t *netif, ipaddr_t *dest, pktbuf_t *buf);
+} link_layer_t;
+
 typedef struct _netif_t {
   char name[NETIF_NAME_SIZE];
   netif_hwaddr_t hwaddr;
@@ -44,6 +53,8 @@ typedef struct _netif_t {
 
   netif_ops_t *ops;
   void *ops_data;
+
+  const link_layer_t *link_layer;
 
   nlist_node_t node;
 
@@ -75,5 +86,7 @@ net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo);
 pktbuf_t *netif_get_out(netif_t *netif, int tmo);
 
 net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf);
+
+net_err_t netif_register_layer(int type, const link_layer_t *layer);
 
 #endif
