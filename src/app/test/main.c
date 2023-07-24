@@ -74,8 +74,24 @@ void thread2_entry(void *arg) {
 
 #include "netif_pcap.h"
 
+pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
+
 net_err_t netdev_init(void) {
-  netif_pcp_open();
+  netif_t *netif =
+      netif_open("netif 0", (netif_ops_t *)&netdev_ops, &netdev0_data);
+  if (!netif) {
+    dbg_error(DBG_NETIF, "open netif 0 err");
+    return NET_ERR_NONE;
+  }
+
+  ipaddr_t ip, mask, gw;
+  ipaddr_from_str(&ip, netdev0_ip);
+  ipaddr_from_str(&mask, netdev0_mask);
+  ipaddr_from_str(&gw, netdev0_gw);
+
+  netif_set_addr(netif, &ip, &mask, &gw);
+
+  netif_set_active(netif);
 
   return NET_ERR_OK;
 }
