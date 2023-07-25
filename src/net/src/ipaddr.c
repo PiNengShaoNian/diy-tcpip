@@ -53,3 +53,7 @@ ipaddr_t* ipaddr_get_any() {
 int ipaddr_is_equal(const ipaddr_t* ipaddr1, const ipaddr_t* ipaddr2) {
   return ipaddr1->q_addr == ipaddr2->q_addr;
 }
+
+void ipaddr_to_buf(const ipaddr_t* src, uint8_t* in_buf) {
+  *(uint32_t*)in_buf = src->q_addr;
+}
