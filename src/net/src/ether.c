@@ -1,5 +1,6 @@
 #include "ether.h"
 
+#include "arp.h"
 #include "dbg.h"
 #include "net_err.h"
 #include "netif.h"
@@ -31,7 +32,9 @@ static void display_ether_pkt(char *title, ether_pkt_t *pkt, int total_size) {
 #define display_ether_pkt(title, pkt, total)
 #endif
 
-net_err_t ether_open(struct _netif_t *netif) { return NET_ERR_OK; }
+net_err_t ether_open(struct _netif_t *netif) {
+  return arp_make_gratuitous(netif);
+}
 
 void ether_close(struct _netif_t *netif) {}
 
