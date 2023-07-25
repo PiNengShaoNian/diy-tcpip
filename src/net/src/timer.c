@@ -80,3 +80,25 @@ net_err_t net_timer_add(net_timer_t *timer, const char *name, timer_proc_t proc,
   display_timer_list();
   return NET_ERR_OK;
 }
+
+void net_timer_remove(net_timer_t *timer) {
+  dbg_info(DBG_TIMER, "remove timer: %s", timer->name);
+
+  nlist_node_t *node;
+  nlist_for_each(node, &timer_list) {
+    net_timer_t *curr = nlist_entry(node, net_timer_t, node);
+    if (curr != timer) {
+      continue;
+    }
+
+    nlist_node_t *next = nlist_node_next(&timer->node);
+    if (next) {
+      net_timer_t *next_timer = nlist_entry(next, net_timer_t, node);
+      next_timer->curr += timer->curr;
+    }
+    nlist_remove(&timer_list, &timer->node);
+    break;
+  }
+
+  display_timer_list();
+}
