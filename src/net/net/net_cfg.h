@@ -11,6 +11,7 @@
 #define DBG_ETHER DBG_LEVEL_INFO
 #define DBG_TOOLS DBG_LEVEL_INFO
 #define DBG_TIMER DBG_LEVEL_NONE
+#define DBG_ARP DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE 1
 
@@ -29,5 +30,7 @@
 #define NETIF_DEV_CNT 10
 
 #define TIMER_NAME_SIZE 32
+
+#define ARP_CACHE_SIZE 50
 
 #endif

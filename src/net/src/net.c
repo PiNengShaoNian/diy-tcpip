@@ -1,5 +1,6 @@
 #include "net.h"
 
+#include "arp.h"
 #include "dbg.h"
 #include "ether.h"
 #include "exmsg.h"
@@ -25,6 +26,7 @@ net_err_t net_init(void) {
 
   loop_init();
   ether_init();
+  arp_init();
 
   return NET_ERR_OK;
 }
