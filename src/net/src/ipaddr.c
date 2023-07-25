@@ -49,3 +49,7 @@ ipaddr_t* ipaddr_get_any() {
 
   return (ipaddr_t*)&ipaddr_any;
 }
+
+int ipaddr_is_equal(const ipaddr_t* ipaddr1, const ipaddr_t* ipaddr2) {
+  return ipaddr1->q_addr == ipaddr2->q_addr;
+}
