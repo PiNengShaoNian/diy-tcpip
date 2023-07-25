@@ -7,6 +7,7 @@
 #include "net_plat.h"
 #include "netif.h"
 #include "pktbuf.h"
+#include "timer.h"
 #include "tools.h"
 
 net_err_t net_init(void) {
@@ -19,6 +20,8 @@ net_err_t net_init(void) {
   exmsg_init();
   pktbuf_init();
   netif_init();
+
+  net_timer_init();
 
   loop_init();
   ether_init();

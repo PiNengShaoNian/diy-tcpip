@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 #include "net_cfg.h"
+#include "net_err.h"
+
+net_err_t tools_init(void);
 
 static inline uint16_t swap_u16(uint16_t v) {
   uint16_t r = ((v & 0xFF) << 8) | ((v >> 8) & 0xFF);
