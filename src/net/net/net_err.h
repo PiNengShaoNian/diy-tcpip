@@ -13,6 +13,7 @@ typedef enum _net_err_t {
   NET_ERR_STATE = -8,
   NET_ERR_IO = -9,
   NET_ERR_EXIST = -10,
+  NET_ERR_NOT_SUPPORT = -11,
 } net_err_t;
 
 #endif
