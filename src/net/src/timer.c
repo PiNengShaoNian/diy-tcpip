@@ -102,3 +102,38 @@ void net_timer_remove(net_timer_t *timer) {
 
   display_timer_list();
 }
+
+net_err_t net_timer_check_tmo(int diff_ms) {
+  nlist_node_t *node = nlist_first(&timer_list);
+  nlist_t wait_list;
+  nlist_init(&wait_list);
+
+  while (node) {
+    nlist_node_t *next = nlist_node_next(node);
+    net_timer_t *timer = nlist_entry(node, net_timer_t, node);
+    if (timer->curr > diff_ms) {
+      timer->curr -= diff_ms;
+      break;
+    }
+
+    diff_ms -= timer->curr;
+    timer->curr = 0;
+    nlist_remove(&timer_list, &timer->node);
+    nlist_insert_last(&wait_list, &timer->node);
+    node = next;
+  }
+
+  while ((node = nlist_remove_first(&wait_list)) != (nlist_node_t *)0) {
+    net_timer_t *timer = nlist_entry(node, net_timer_t, node);
+
+    timer->proc(timer, timer->arg);
+
+    if (timer->flags & NET_TIMER_RELOAD) {
+      timer->curr = timer->reload;
+      insert_timer(timer);
+    }
+  }
+
+  display_timer_list();
+  return NET_ERR_OK;
+}

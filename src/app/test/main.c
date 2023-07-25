@@ -313,22 +313,22 @@ void pktbuf_test(void) {
 
 void timer0_proc(struct _net_timer_t *timer, void *arg) {
   static int count = 1;
-  plat_printf("this is %s: %d", timer->name, count++);
+  plat_printf("this is %s: %d\n", timer->name, count++);
 }
 
 void timer1_proc(struct _net_timer_t *timer, void *arg) {
   static int count = 1;
-  plat_printf("this is %s: %d", timer->name, count++);
+  plat_printf("this is %s: %d\n", timer->name, count++);
 }
 
 void timer2_proc(struct _net_timer_t *timer, void *arg) {
   static int count = 1;
-  plat_printf("this is %s: %d", timer->name, count++);
+  plat_printf("this is %s: %d\n", timer->name, count++);
 }
 
 void timer3_proc(struct _net_timer_t *timer, void *arg) {
   static int count = 1;
-  plat_printf("this is %s: %d", timer->name, count++);
+  plat_printf("this is %s: %d\n", timer->name, count++);
 }
 
 void timer_test(void) {
@@ -336,10 +336,14 @@ void timer_test(void) {
 
   net_timer_add(&t0, "t0", timer0_proc, (void *)0, 200, 0);
   net_timer_add(&t1, "t1", timer1_proc, (void *)0, 1000, NET_TIMER_RELOAD);
-  net_timer_add(&t2, "t2", timer2_proc, (void *)0, 1000, 0);
-  net_timer_add(&t3, "t3", timer3_proc, (void *)0, 4000, 0);
+  net_timer_add(&t2, "t2", timer2_proc, (void *)0, 1000, NET_TIMER_RELOAD);
+  net_timer_add(&t3, "t3", timer3_proc, (void *)0, 4000, NET_TIMER_RELOAD);
 
   net_timer_remove(&t1);
+
+  net_timer_check_tmo(100);
+  net_timer_check_tmo(1200);
+  net_timer_check_tmo(2000);
 }
 
 void basic_test(void) {
