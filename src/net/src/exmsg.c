@@ -3,7 +3,9 @@
 #include "dbg.h"
 #include "fixq.h"
 #include "mblock.h"
+#include "sys.h"
 #include "sys_plat.h"
+#include "timer.h"
 
 static void *msg_tbl[EXMSG_MSG_CNT];
 static fixq_t msg_queue;
@@ -57,20 +59,28 @@ static net_err_t do_netif_in(exmsg_t *msg) {
 static void work_thread(void *arg) {
   dbg_info(DBG_MSG, "exmsg running...\n");
 
+  net_time_t time;
+  sys_time_curr(&time);
+
   while (1) {
-    exmsg_t *msg = (exmsg_t *)fixq_recv(&msg_queue, 0);
+    int first_tmo = net_timer_first_tmo();
+    exmsg_t *msg = (exmsg_t *)fixq_recv(&msg_queue, first_tmo);
+    if (msg) {
+      dbg_info(DBG_MSG, "recv a msg %p: %d\n", msg, msg->type);
 
-    dbg_info(DBG_MSG, "recv a msg %p: %d\n", msg, msg->type);
+      switch (msg->type) {
+        case NET_EXMSG_NETIF_IN:
+          do_netif_in(msg);
+          break;
+        default:
+          break;
+      }
 
-    switch (msg->type) {
-      case NET_EXMSG_NETIF_IN:
-        do_netif_in(msg);
-        break;
-      default:
-        break;
+      mblock_free(&msg_block, msg);
     }
 
-    mblock_free(&msg_block, msg);
+    int diff_ms = sys_time_goes(&time);
+    net_timer_check_tmo(diff_ms);
   }
 }
 

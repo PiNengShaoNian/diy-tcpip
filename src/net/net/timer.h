@@ -28,5 +28,6 @@ net_err_t net_timer_add(net_timer_t *timer, const char *name, timer_proc_t proc,
                         void *arg, int ms, int flags);
 void net_timer_remove(net_timer_t *timer);
 net_err_t net_timer_check_tmo(int diff_ms);
+int net_timer_first_tmo(void);
 
 #endif
