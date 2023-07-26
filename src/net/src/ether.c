@@ -36,7 +36,7 @@ net_err_t ether_open(struct _netif_t *netif) {
   return arp_make_gratuitous(netif);
 }
 
-void ether_close(struct _netif_t *netif) {}
+void ether_close(struct _netif_t *netif) { arp_clear(netif); }
 
 static net_err_t is_pkt_ok(ether_pkt_t *frame, int total_size) {
   if (total_size > sizeof(ether_hdr_t) + ETHER_MTU) {
@@ -89,7 +89,12 @@ net_err_t ether_out(struct _netif_t *netif, ipaddr_t *dest, pktbuf_t *buf) {
                          (const uint8_t *)netif->hwaddr.addr, buf);
   }
 
-  return arp_resolve(netif, dest, buf);
+  const uint8_t *hwaddr = arp_find(netif, dest);
+  if (hwaddr) {
+    return ether_raw_out(netif, NET_PROTOCOL_IPV4, hwaddr, buf);
+  } else {
+    return arp_resolve(netif, dest, buf);
+  }
 }
 
 net_err_t ether_init(void) {

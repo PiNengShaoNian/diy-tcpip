@@ -102,6 +102,11 @@ net_err_t netdev_init(void) {
   ipaddr_from_str(&dest, friend0_ip);
   netif_out(netif, &dest, buf);
 
+  ipaddr_from_str(&dest, "192.168.174.255");
+  buf = pktbuf_alloc(32);
+  pktbuf_fill(buf, 0xA5, 32);
+  netif_out(netif, &dest, buf);
+
   return NET_ERR_OK;
 }
 

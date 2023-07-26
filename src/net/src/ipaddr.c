@@ -62,3 +62,22 @@ void ipaddr_from_buf(ipaddr_t* dest, uint8_t* ip_buf) {
   dest->q_addr = *(uint32_t*)ip_buf;
   dest->type = IPADDR_V4;
 }
+
+int ipaddr_is_local_broadcast(const ipaddr_t* ipaddr) {
+  return ipaddr->q_addr == 0xFFFFFFFF;
+}
+
+ipaddr_t ipaddr_get_host(const ipaddr_t* ipaddr, const ipaddr_t* netmask) {
+  ipaddr_t host_id;
+
+  host_id.q_addr = ipaddr->q_addr & ~netmask->q_addr;
+
+  return host_id;
+}
+
+int ipaddr_is_direct_broadcast(const ipaddr_t* ipaddr,
+                               const ipaddr_t* netmask) {
+  ipaddr_t host_id = ipaddr_get_host(ipaddr, netmask);
+
+  return host_id.q_addr == (0xFFFFFFFF & ~netmask->q_addr);
+}

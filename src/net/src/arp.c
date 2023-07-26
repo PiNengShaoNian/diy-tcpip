@@ -14,6 +14,8 @@ static mblock_t cache_mblock;
 static nlist_t cache_list;
 static const uint8_t empty_hwaddr[] = {0, 0, 0, 0, 0, 0};
 
+static arp_entry_t *cache_find(const uint8_t *ip);
+
 #if DBG_DISP_ENABLED(DBG_ARP)
 static void display_arp_entry(arp_entry_t *entry) {
   plat_printf("%d: ", (int)(entry - cache_tbl));
@@ -119,6 +121,20 @@ static void cache_free(arp_entry_t *entry) {
   cache_clear_all(entry);
   nlist_remove(&cache_list, &entry->node);
   mblock_free(&cache_mblock, entry);
+}
+
+const uint8_t *arp_find(netif_t *netif, ipaddr_t *ipaddr) {
+  if (ipaddr_is_local_broadcast(ipaddr) ||
+      ipaddr_is_direct_broadcast(ipaddr, &netif->netmask)) {
+    return ether_broadcast_addr();
+  }
+
+  arp_entry_t *entry = cache_find(ipaddr->a_addr);
+  if (entry && entry->state == NET_ARP_RESOLVED) {
+    return entry->hwaddr;
+  }
+
+  return (const uint8_t *)0;
 }
 
 static void arp_cache_tmo(net_timer_t *timer, void *arg) {
@@ -381,6 +397,18 @@ net_err_t arp_in(netif_t *netif, pktbuf_t *buf) {
   pktbuf_free(buf);
 
   return NET_ERR_OK;
+}
+
+void arp_clear(netif_t *netif) {
+  nlist_node_t *node, *next;
+  for (node = nlist_first(&cache_list); node; node = next) {
+    next = nlist_node_next(node);
+
+    arp_entry_t *entry = nlist_entry(node, arp_entry_t, node);
+    if (entry->netif == netif) {
+      nlist_remove(&cache_list, node);
+    }
+  }
 }
 
 net_err_t arp_resolve(netif_t *netif, const ipaddr_t *ipaddr, pktbuf_t *buf) {

@@ -49,5 +49,7 @@ net_err_t arp_make_request(netif_t *netif, const ipaddr_t *dest);
 net_err_t arp_make_gratuitous(netif_t *netif);
 net_err_t arp_in(netif_t *netif, pktbuf_t *buf);
 net_err_t arp_resolve(netif_t *netif, const ipaddr_t *, pktbuf_t *buf);
+void arp_clear(netif_t *netif);
+const uint8_t *arp_find(netif_t *netif, ipaddr_t *ipaddr);
 
 #endif
