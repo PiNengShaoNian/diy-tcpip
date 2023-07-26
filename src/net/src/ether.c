@@ -89,9 +89,7 @@ net_err_t ether_out(struct _netif_t *netif, ipaddr_t *dest, pktbuf_t *buf) {
                          (const uint8_t *)netif->hwaddr.addr, buf);
   }
 
-  arp_make_request(netif, dest);
-
-  return NET_ERR_OK;
+  return arp_resolve(netif, dest, buf);
 }
 
 net_err_t ether_init(void) {

@@ -8,6 +8,7 @@
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];
 static mblock_t cache_mblock;
 static nlist_t cache_list;
+static const uint8_t empty_hwaddr[] = {0, 0, 0, 0, 0, 0};
 
 #if DBG_DISP_ENABLED(DBG_ARP)
 static void display_arp_entry(arp_entry_t *entry) {
@@ -79,7 +80,7 @@ static net_err_t cache_init(void) {
 }
 
 static void cache_clear_all(arp_entry_t *entry) {
-  dbg_info(DBG_ARP, "clear packet");
+  dbg_info(DBG_ARP, "clear packet\n");
   nlist_node_t *first;
   while ((first = nlist_remove_first(&entry->buf_list))) {
     pktbuf_t *buf = nlist_entry(first, pktbuf_t, node);
@@ -92,7 +93,7 @@ static arp_entry_t *cache_alloc(int force) {
   if (!entry && force) {
     nlist_node_t *node = nlist_remove_last(&cache_list);
     if (!node) {
-      dbg_warning(DBG_ARP, "alloc arp entry failed.");
+      dbg_warning(DBG_ARP, "alloc arp entry failed.\n");
       return (arp_entry_t *)0;
     }
 
@@ -120,13 +121,13 @@ net_err_t arp_init(void) {
   net_err_t err = cache_init();
 
   if (err < 0) {
-    dbg_error(DBG_ARP, "arp cache init failed.");
+    dbg_error(DBG_ARP, "arp cache init failed.\n");
   }
 
   return NET_ERR_OK;
 }
 
-static arp_entry_t *cache_find(uint8_t *ip) {
+static arp_entry_t *cache_find(const uint8_t *ip) {
   nlist_node_t *node;
   nlist_for_each(node, &cache_list) {
     arp_entry_t *entry = nlist_entry(node, arp_entry_t, node);
@@ -141,7 +142,7 @@ static arp_entry_t *cache_find(uint8_t *ip) {
 }
 
 static void cache_entry_set(arp_entry_t *entry, const uint8_t *hwaddr,
-                            uint8_t *ip, netif_t *netif, int state) {
+                            const uint8_t *ip, netif_t *netif, int state) {
   plat_memcpy(entry->hwaddr, hwaddr, ETHER_HWA_SIZE);
   plat_memcpy(entry->paddr, ip, IPV4_ADDR_SIZE);
   entry->state = state;
@@ -151,7 +152,7 @@ static void cache_entry_set(arp_entry_t *entry, const uint8_t *hwaddr,
 }
 
 static net_err_t cache_send_all(arp_entry_t *entry) {
-  dbg_info(DBG_ARP, "send all packet");
+  dbg_info(DBG_ARP, "send all packet\n");
   dbg_dump_ip_buf(DBG_ARP, "ip: ", entry->paddr);
 
   nlist_node_t *first;
@@ -170,6 +171,10 @@ static net_err_t cache_send_all(arp_entry_t *entry) {
 
 static net_err_t cache_insert(netif_t *netif, uint8_t *ip, uint8_t *hwaddr,
                               int force) {
+  if (*(uint32_t *)ip == 0) {
+    return NET_ERR_NOT_SUPPORT;
+  }
+
   arp_entry_t *entry = cache_find(ip);
   if (!entry) {
     entry = cache_alloc(force);
@@ -191,7 +196,7 @@ static net_err_t cache_insert(netif_t *netif, uint8_t *ip, uint8_t *hwaddr,
 
     net_err_t err = cache_send_all(entry);
     if (err < 0) {
-      dbg_error(DBG_ARP, "send packet failed");
+      dbg_error(DBG_ARP, "send packet failed\n");
       return err;
     }
   }
@@ -202,16 +207,6 @@ static net_err_t cache_insert(netif_t *netif, uint8_t *ip, uint8_t *hwaddr,
 
 net_err_t arp_make_request(netif_t *netif, const ipaddr_t *dest) {
   uint8_t *ip = (uint8_t *)dest->a_addr;
-
-  ip[0] = 0x1;
-  cache_insert(netif, ip, netif->hwaddr.addr, 1);
-
-  ip[0] = 0x2;
-  cache_insert(netif, ip, netif->hwaddr.addr, 1);
-
-  ip[0] = 0x3;
-  cache_insert(netif, ip, netif->hwaddr.addr, 1);
-  cache_insert(netif, ip, netif->hwaddr.addr, 1);
 
   pktbuf_t *buf = pktbuf_alloc(sizeof(arp_pkt_t));
 
@@ -239,7 +234,7 @@ net_err_t arp_make_request(netif_t *netif, const ipaddr_t *dest) {
 }
 
 net_err_t arp_make_gratuitous(netif_t *netif) {
-  dbg_info(DBG_ARP, "send an gratuitous arp...");
+  dbg_info(DBG_ARP, "send an gratuitous arp...\n");
 
   return arp_make_request(netif, &netif->ipaddr);
 }
@@ -263,7 +258,7 @@ net_err_t arp_make_reply(netif_t *netif, pktbuf_t *buf) {
 static net_err_t is_pkt_ok(arp_pkt_t *arp_packet, uint16_t size,
                            netif_t *netif) {
   if (size < sizeof(arp_pkt_t)) {
-    dbg_warning(DBG_ARP, "packet size error");
+    dbg_warning(DBG_ARP, "packet size error\n");
     return NET_ERR_SIZE;
   }
 
@@ -271,13 +266,13 @@ static net_err_t is_pkt_ok(arp_pkt_t *arp_packet, uint16_t size,
       (arp_packet->hwlen != ETHER_HWA_SIZE) ||
       (x_ntohs(arp_packet->ptype) != NET_PROTOCOL_IPV4 ||
        (arp_packet->plen != IPV4_ADDR_SIZE))) {
-    dbg_warning(DBG_ARP, "packet incorrect");
+    dbg_warning(DBG_ARP, "packet incorrect\n");
     return NET_ERR_NOT_SUPPORT;
   }
 
   uint16_t opcode = x_ntohs(arp_packet->opcode);
   if ((opcode != ARP_REPLY) && (opcode != ARP_REQUEST)) {
-    dbg_warning(DBG_ARP, "unknown opcode");
+    dbg_warning(DBG_ARP, "unknown opcode\n");
     return NET_ERR_NOT_SUPPORT;
   }
 
@@ -297,12 +292,63 @@ net_err_t arp_in(netif_t *netif, pktbuf_t *buf) {
     return err;
   }
 
-  if (x_ntohs(arp_packet->opcode) == ARP_REQUEST) {
-    dbg_info(DBG_ARP, "arp request, send reply");
-    return arp_make_reply(netif, buf);
+  arp_pkt_display(arp_packet);
+
+  ipaddr_t target_ip;
+  ipaddr_from_buf(&target_ip, arp_packet->target_paddr);
+  if (ipaddr_is_equal(&netif->ipaddr, &target_ip)) {
+    dbg_info(DBG_ARP, "receive an arp for me\n");
+
+    cache_insert(netif, arp_packet->sender_paddr, arp_packet->sender_hwaddr, 1);
+
+    if (x_ntohs(arp_packet->opcode) == ARP_REQUEST) {
+      dbg_info(DBG_ARP, "arp request, send reply\n");
+      return arp_make_reply(netif, buf);
+    }
+  } else {
+    dbg_info(DBG_ARP, "receive an arp not me\n");
+    cache_insert(netif, arp_packet->sender_paddr, arp_packet->sender_hwaddr, 0);
   }
 
   pktbuf_free(buf);
 
   return NET_ERR_OK;
+}
+
+net_err_t arp_resolve(netif_t *netif, const ipaddr_t *ipaddr, pktbuf_t *buf) {
+  arp_entry_t *entry = cache_find(ipaddr->a_addr);
+  if (entry) {
+    dbg_info(DBG_ARP, "found an arp entry\n");
+
+    if (entry->state == NET_ARP_RESOLVED) {
+      return ether_raw_out(netif, NET_PROTOCOL_IPV4, entry->hwaddr, buf);
+    }
+
+    if (nlist_count(&entry->buf_list) <= ARP_MAX_PKT_WAIT) {
+      dbg_info(DBG_ARP, "insert buf to arp entry\n");
+      nlist_insert_last(&entry->buf_list, &buf->node);
+      return NET_ERR_OK;
+    } else {
+      dbg_warning(DBG_ARP, "too many waiting...\n");
+      return NET_ERR_FULL;
+    }
+  } else {
+    dbg_info(DBG_ARP, "make arp request\n");
+
+    entry = cache_alloc(1);
+    if (entry == (arp_entry_t *)0) {
+      dbg_error(DBG_ARP, "alloc arp failed.\n");
+      return NET_ERR_NONE;
+    }
+
+    cache_entry_set(entry, empty_hwaddr, ipaddr->a_addr, netif,
+                    NET_ARP_WAITING);
+    nlist_insert_first(&cache_list, &entry->node);
+
+    nlist_insert_last(&entry->buf_list, &buf->node);
+
+    display_arp_tbl();
+
+    return arp_make_request(netif, ipaddr);
+  }
 }
