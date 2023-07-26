@@ -36,6 +36,9 @@ typedef struct _arp_entry_t {
     NET_ARP_RESOLVED,
   } state;
 
+  int tmo;
+  int retry;
+
   nlist_node_t node;
   nlist_t buf_list;
   netif_t *netif;

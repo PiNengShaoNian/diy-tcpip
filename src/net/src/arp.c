@@ -6,12 +6,67 @@
 #include "tools.h"
 
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];
-static mblock_t cache_block;
+static mblock_t cache_mblock;
 static nlist_t cache_list;
+
+#if DBG_DISP_ENABLED(DBG_ARP)
+static void display_arp_entry(arp_entry_t *entry) {
+  plat_printf("%d: ", (int)(entry - cache_tbl));
+  dbg_dump_ip_buf("  ip: ", entry->paddr);
+  dbg_dump_hwaddr("  mac: ", entry->hwaddr, ETHER_HWA_SIZE);
+
+  plat_printf("tmo: %d, retry: %d, %s, buf: %d", entry->tmo, entry->retry,
+              entry->state == NET_ARP_RESOLVED ? "stable" : "pending",
+              nlist_count(&entry->buf_list));
+}
+
+static display_arp_tbl(void) {
+  plat_printf("----------- arp table start ----------\n");
+
+  arp_entry_t *entry = cache_tbl;
+  for (int i = 0; i < ARP_CACHE_SIZE; i++) {
+    if (entry->state == NET_ARP_FREE) {
+      continue;
+    }
+
+    display_arp_entry(entry);
+  }
+
+  plat_printf("----------- arp table end ----------\n");
+}
+
+static void arp_pkt_display(arp_pkt_t *packet) {
+  uint16_t opcode = x_ntohs(packet->opcode);
+  plat_printf("------------ arp packet -----------\n");
+  plat_printf("     htype: %d\n", x_ntohs(packet->htype));
+  plat_printf("     ptype: 0x%04x\n", x_ntohs(packet->ptype));
+  plat_printf("     hlen: %d\n", packet->hwlen);
+  plat_printf("     plen: %d\n", packet->plen);
+  plat_printf("     type: %d ", opcode);
+  switch (opcode) {
+    case ARP_REQUEST:
+      plat_printf("request\n");
+      break;
+    case ARP_REPLY:
+      plat_printf("reply\n");
+      break;
+    default:
+      plat_printf("unknown\n");
+  }
+
+  dbg_dump_ip_buf("\n     sender: ", packet->sender_paddr);
+  dbg_dump_hwaddr("        mac: ", packet->sender_hwaddr, ETHER_HWA_SIZE);
+  dbg_dump_ip_buf("\n     target: ", packet->target_paddr);
+  dbg_dump_hwaddr("        mac: ", packet->target_hwaddr, ETHER_HWA_SIZE);
+  plat_printf("\n------------ arp packet end -----------\n");
+}
+#else
+#define arp_pkt_display(packet)
+#endif
 
 static net_err_t cache_init(void) {
   nlist_init(&cache_list);
-  net_err_t err = mblock_init(&cache_block, cache_tbl, sizeof(arp_entry_t),
+  net_err_t err = mblock_init(&cache_mblock, cache_tbl, sizeof(arp_entry_t),
                               ARP_CACHE_SIZE, NLOCKER_NONE);
 
   if (err < 0) {
@@ -19,6 +74,44 @@ static net_err_t cache_init(void) {
   }
 
   return NET_ERR_OK;
+}
+
+static void cache_clear_all(arp_entry_t *entry) {
+  dbg_info(DBG_ARP, "clear packet");
+  nlist_node_t *first;
+  while ((first = nlist_remove_first(&entry->buf_list))) {
+    pktbuf_t *buf = nlist_entry(first, pktbuf_t, node);
+    pktbuf_free(buf);
+  }
+}
+
+static arp_entry_t *cache_alloc(int force) {
+  arp_entry_t *entry = mblock_alloc(&cache_mblock, -1);
+  if (!entry && force) {
+    nlist_node_t *node = nlist_remove_last(&cache_list);
+    if (!node) {
+      dbg_warning(DBG_ARP, "alloc arp entry failed.");
+      return (arp_entry_t *)0;
+    }
+
+    entry = nlist_entry(node, arp_entry_t, node);
+    cache_clear_all(entry);
+  }
+
+  if (entry) {
+    plat_memset(entry, 0, sizeof(arp_entry_t));
+    entry->state = NET_ARP_FREE;
+    nlist_node_init(&entry->node);
+    nlist_init(&entry->buf_list);
+  }
+
+  return entry;
+}
+
+static void cache_free(arp_entry_t *entry) {
+  cache_clear_all(entry);
+  nlist_remove(&cache_list, &entry->node);
+  mblock_free(&cache_mblock, entry);
 }
 
 net_err_t arp_init(void) {
@@ -52,6 +145,8 @@ net_err_t arp_make_request(netif_t *netif, const ipaddr_t *dest) {
   plat_memset(arp_packet->target_hwaddr, 0, ETHER_HWA_SIZE);
   ipaddr_to_buf(dest, arp_packet->target_paddr);
 
+  arp_pkt_display(arp_packet);
+
   return ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
 }
 
@@ -71,6 +166,8 @@ net_err_t arp_make_reply(netif_t *netif, pktbuf_t *buf) {
               IPV4_ADDR_SIZE);
   plat_memcpy(arp_packet->sender_hwaddr, netif->hwaddr.addr, ETHER_HWA_SIZE);
   ipaddr_to_buf(&netif->ipaddr, arp_packet->sender_paddr);
+
+  arp_pkt_display(arp_packet);
 
   return ether_raw_out(netif, NET_PROTOCOL_ARP, arp_packet->target_hwaddr, buf);
 }
