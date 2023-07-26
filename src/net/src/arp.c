@@ -3,8 +3,12 @@
 #include "dbg.h"
 #include "mblock.h"
 #include "protocol.h"
+#include "timer.h"
 #include "tools.h"
 
+#define to_scan_cnt(tmo) (tmo / ARP_TIMER_TMO)
+
+static net_timer_t cache_timer;
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];
 static mblock_t cache_mblock;
 static nlist_t cache_list;
@@ -117,11 +121,71 @@ static void cache_free(arp_entry_t *entry) {
   mblock_free(&cache_mblock, entry);
 }
 
+static void arp_cache_tmo(net_timer_t *timer, void *arg) {
+  int changed_cnt = 0;
+  nlist_node_t *curr, *next;
+
+  for (curr = cache_list.first; curr; curr = next) {
+    next = nlist_node_next(curr);
+
+    arp_entry_t *entry = nlist_entry(curr, arp_entry_t, node);
+    if (--entry->tmo > 0) {
+      continue;
+    }
+
+    changed_cnt++;
+    switch (entry->state) {
+      case NET_ARP_RESOLVED: {
+        dbg_info(DBG_ARP, "stable to pending: \n");
+        display_arp_entry(entry);
+        ipaddr_t ipaddr;
+        ipaddr_from_buf(&ipaddr, entry->paddr);
+        entry->state = NET_ARP_WAITING;
+        entry->tmo = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+        entry->retry = ARP_ENTRY_RETRY_CNT;
+        arp_make_request(entry->netif, &ipaddr);
+        break;
+      }
+      case NET_ARP_WAITING: {
+        if (--entry->retry == 0) {
+          dbg_info(DBG_ARP, "pending tmo, free it");
+          display_arp_entry(entry);
+          cache_free(entry);
+        } else {
+          dbg_info(DBG_ARP, "pending tmo, send request again: \n");
+          display_arp_entry(entry);
+
+          ipaddr_t ipaddr;
+          ipaddr_from_buf(&ipaddr, entry->paddr);
+          entry->tmo = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+          arp_make_request(entry->netif, &ipaddr);
+        }
+        break;
+      }
+      default:
+        dbg_error(DBG_ARP, "unknown arp state");
+        break;
+    }
+  }
+
+  if (changed_cnt) {
+    display_arp_tbl();
+  }
+}
+
 net_err_t arp_init(void) {
   net_err_t err = cache_init();
 
   if (err < 0) {
     dbg_error(DBG_ARP, "arp cache init failed.\n");
+  }
+
+  err = net_timer_add(&cache_timer, "arp timer", arp_cache_tmo, (void *)0,
+                      ARP_TIMER_TMO * 1000, NET_TIMER_RELOAD);
+
+  if (err < 0) {
+    dbg_error(DBG_ARP, "create timer failed: %d", err);
+    return err;
   }
 
   return NET_ERR_OK;
@@ -147,8 +211,12 @@ static void cache_entry_set(arp_entry_t *entry, const uint8_t *hwaddr,
   plat_memcpy(entry->paddr, ip, IPV4_ADDR_SIZE);
   entry->state = state;
   entry->netif = netif;
-  entry->tmo = 0;
-  entry->retry = 0;
+  if (state == NET_ARP_RESOLVED) {
+    entry->tmo = to_scan_cnt(ARP_ENTRY_STABLE_TMO);
+  } else {
+    entry->tmo = to_scan_cnt(ARP_ENTRY_PENDING_TMO);
+  }
+  entry->retry = ARP_ENTRY_RETRY_CNT;
 }
 
 static net_err_t cache_send_all(arp_entry_t *entry) {
