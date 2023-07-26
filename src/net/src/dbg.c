@@ -40,7 +40,12 @@ void dbg_print(int m_level, int s_level, const char *file, const char *func,
   }
 }
 
-void dbg_dump_hwaddr(const char *msg, const uint8_t *hwaddr, int len) {
+void dbg_dump_hwaddr(int module, const char *msg, const uint8_t *hwaddr,
+                     int len) {
+  if (module > DBG_LEVEL_INFO) {
+    return;
+  }
+
   if (msg) {
     plat_printf("%s", msg);
   }
@@ -54,7 +59,11 @@ void dbg_dump_hwaddr(const char *msg, const uint8_t *hwaddr, int len) {
   }
 }
 
-void dbg_dump_ip(const char *msg, ipaddr_t *ip) {
+void dbg_dump_ip(int module, const char *msg, ipaddr_t *ip) {
+  if (module > DBG_LEVEL_INFO) {
+    return;
+  }
+
   if (msg) {
     plat_printf("%s", msg);
   }
@@ -67,7 +76,11 @@ void dbg_dump_ip(const char *msg, ipaddr_t *ip) {
   }
 }
 
-void dbg_dump_ip_buf(const char *msg, const uint8_t *ipaddr) {
+void dbg_dump_ip_buf(int module, const char *msg, const uint8_t *ipaddr) {
+  if (module > DBG_LEVEL_INFO) {
+    return;
+  }
+
   if (msg) {
     plat_printf("%s", msg);
   }
