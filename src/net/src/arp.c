@@ -71,6 +71,8 @@ static void arp_pkt_display(arp_pkt_t *packet) {
 }
 #else
 #define arp_pkt_display(packet)
+#define display_arp_entry(entry)
+#define display_arp_tbl()
 #endif
 
 static net_err_t cache_init(void) {
