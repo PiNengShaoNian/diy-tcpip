@@ -2,6 +2,7 @@
 
 #include "arp.h"
 #include "dbg.h"
+#include "ipv4.h"
 #include "net_err.h"
 #include "netif.h"
 #include "protocol.h"
@@ -72,6 +73,13 @@ net_err_t ether_in(struct _netif_t *netif, pktbuf_t *buf) {
         return NET_ERR_SIZE;
       }
       return arp_in(netif, buf);
+    case NET_PROTOCOL_IPV4:
+      err = pktbuf_remove_header(buf, sizeof(ether_hdr_t));
+      if (err < 0) {
+        dbg_error(DBG_ETHER, "remove header failed.");
+        return NET_ERR_SIZE;
+      }
+      return ipv4_in(netif, buf);
     default:
       dbg_warning(DBG_ETHER, "unknow packet");
       return NET_ERR_NOT_SUPPORT;
