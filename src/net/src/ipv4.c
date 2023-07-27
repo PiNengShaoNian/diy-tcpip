@@ -4,6 +4,8 @@
 #include "protocol.h"
 #include "tools.h"
 
+static uint16_t packet_id = 0;
+
 #if DBG_DISP_ENABLED(DBG_IP)
 static void display_ip_pkt(ipv4_pkt_t *pkt) {
   ipv4_hdr_t *ip_hdr = &pkt->hdr;
@@ -67,6 +69,12 @@ static void iphdr_ntohs(ipv4_pkt_t *pkt) {
   pkt->hdr.frag_all = x_ntohs(pkt->hdr.frag_all);
 }
 
+static void iphdr_htons(ipv4_pkt_t *pkt) {
+  pkt->hdr.total_len = x_htons(pkt->hdr.total_len);
+  pkt->hdr.id = x_htons(pkt->hdr.id);
+  pkt->hdr.frag_all = x_htons(pkt->hdr.frag_all);
+}
+
 static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
                               ipaddr_t *dest_ip) {
   ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
@@ -123,6 +131,44 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
   err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
 
   pktbuf_free(buf);
+
+  return NET_ERR_OK;
+}
+
+net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
+                   pktbuf_t *buf) {
+  dbg_info(DBG_IP, "send an ip pkt");
+
+  net_err_t err = pktbuf_add_header(buf, sizeof(ipv4_hdr_t), 1);
+
+  if (err < 0) {
+    dbg_error(DBG_IP, "add header failed");
+    return NET_ERR_SIZE;
+  }
+
+  ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+  pkt->hdr.shdr_all = 0;
+  pkt->hdr.version = NET_VERSION_IPV4;
+  ipv4_set_hdr_size(pkt, sizeof(ipv4_hdr_t));
+  pkt->hdr.total_len = buf->total_size;
+  pkt->hdr.id = packet_id++;
+  pkt->hdr.frag_all = 0;
+  pkt->hdr.ttl = NET_IP_DEFAULT_TTL;
+  pkt->hdr.protocol = protocol;
+  pkt->hdr.hdr_checksum = 0;
+  ipaddr_to_buf(src, pkt->hdr.src_ip);
+  ipaddr_to_buf(dest, pkt->hdr.dest_ip);
+
+  display_ip_pkt(pkt);
+
+  iphdr_htons(pkt);
+
+  err = netif_out(netif_get_default(), dest, buf);
+
+  if (err < 0) {
+    dbg_warning(DBG_IP, "send ip packet failed.");
+    return err;
+  }
 
   return NET_ERR_OK;
 }

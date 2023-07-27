@@ -85,6 +85,8 @@ pktbuf_t *netif_get_in(netif_t *netif, int tmo);
 net_err_t netif_put_out(netif_t *netif, pktbuf_t *buf, int tmo);
 pktbuf_t *netif_get_out(netif_t *netif, int tmo);
 
+netif_t *netif_get_default(void);
+
 net_err_t netif_out(netif_t *netif, ipaddr_t *ipaddr, pktbuf_t *buf);
 
 net_err_t netif_register_layer(int type, const link_layer_t *layer);
