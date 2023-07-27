@@ -159,9 +159,11 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
   ipaddr_to_buf(src, pkt->hdr.src_ip);
   ipaddr_to_buf(dest, pkt->hdr.dest_ip);
 
-  display_ip_pkt(pkt);
-
   iphdr_htons(pkt);
+  pktbuf_reset_acc(buf);
+  pkt->hdr.hdr_checksum = pktbuf_checksum16(buf, ipv4_hdr_size(pkt), 0, 1);
+
+  display_ip_pkt(pkt);
 
   err = netif_out(netif_get_default(), dest, buf);
 
