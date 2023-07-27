@@ -69,10 +69,10 @@ void dbg_dump_ip(int module, const char *msg, ipaddr_t *ip) {
   }
 
   if (ip) {
-    plat_printf("%d.%d.%d.%d", ip->a_addr[0], ip->a_addr[1], ip->a_addr[2],
+    plat_printf("%d.%d.%d.%d\n", ip->a_addr[0], ip->a_addr[1], ip->a_addr[2],
                 ip->a_addr[3]);
   } else {
-    plat_printf("0.0.0.0");
+    plat_printf("0.0.0.0\n");
   }
 }
 
@@ -86,8 +86,8 @@ void dbg_dump_ip_buf(int module, const char *msg, const uint8_t *ipaddr) {
   }
 
   if (ipaddr) {
-    plat_printf("%d.%d.%d.%d", ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3]);
+    plat_printf("%d.%d.%d.%d\n", ipaddr[0], ipaddr[1], ipaddr[2], ipaddr[3]);
   } else {
-    plat_printf("0.0.0.0");
+    plat_printf("0.0.0.0\n");
   }
 }
