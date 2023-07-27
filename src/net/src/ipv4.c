@@ -1,6 +1,7 @@
 #include "ipv4.h"
 
 #include "dbg.h"
+#include "icmpv4.h"
 #include "protocol.h"
 #include "tools.h"
 
@@ -83,6 +84,11 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
 
   switch (pkt->hdr.protocol) {
     case NET_PROTOCOL_ICMPv4:
+      net_err_t err = icmpv4_in(src_ip, &netif->ipaddr, buf);
+      if (err < 0) {
+        dbg_warning(DBG_IP, "icmp in failed.");
+        return err;
+      }
       break;
     case NET_PROTOCOL_UDP:
       break;

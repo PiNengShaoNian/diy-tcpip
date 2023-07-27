@@ -4,6 +4,7 @@
 #include "dbg.h"
 #include "ether.h"
 #include "exmsg.h"
+#include "icmpv4.h"
 #include "ipv4.h"
 #include "loop.h"
 #include "net_plat.h"
@@ -29,6 +30,7 @@ net_err_t net_init(void) {
   ether_init();
   arp_init();
   ipv4_init();
+  icmpv4_init();
 
   return NET_ERR_OK;
 }
