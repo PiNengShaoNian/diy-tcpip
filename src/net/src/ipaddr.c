@@ -75,9 +75,33 @@ ipaddr_t ipaddr_get_host(const ipaddr_t* ipaddr, const ipaddr_t* netmask) {
   return host_id;
 }
 
+ipaddr_t ipaddr_get_net(const ipaddr_t* ipaddr, const ipaddr_t* netmask) {
+  ipaddr_t netid;
+
+  netid.q_addr = ipaddr->q_addr & netmask->q_addr;
+  return netid;
+}
+
 int ipaddr_is_direct_broadcast(const ipaddr_t* ipaddr,
                                const ipaddr_t* netmask) {
   ipaddr_t host_id = ipaddr_get_host(ipaddr, netmask);
 
   return host_id.q_addr == (0xFFFFFFFF & ~netmask->q_addr);
+}
+
+int ipaddr_is_match(const ipaddr_t* dest_ip, const ipaddr_t* src_ip,
+                    const ipaddr_t* netmask) {
+  ipaddr_t dest_netid = ipaddr_get_net(dest_ip, netmask);
+  ipaddr_t src_netid = ipaddr_get_net(src_ip, netmask);
+
+  if (ipaddr_is_local_broadcast(dest_ip)) {
+    return 1;
+  }
+
+  if (ipaddr_is_direct_broadcast(dest_ip, netmask) &&
+      ipaddr_is_equal(&dest_netid, &src_netid)) {
+    return 1;
+  }
+
+  return ipaddr_is_equal(dest_ip, src_ip);
 }
