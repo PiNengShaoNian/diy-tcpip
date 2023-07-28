@@ -12,7 +12,48 @@ static ip_frag_t frag_array[IP_FRAGS_MAX_NR];
 static mblock_t frag_mblock;
 static nlist_t frag_list;
 
+static int get_data_size(ipv4_pkt_t *pkt) {
+  return pkt->hdr.total_len - ipv4_hdr_size(pkt);
+}
+
+static uint16_t get_frag_start(ipv4_pkt_t *pkt) {
+  return pkt->hdr.frag_offset * 8;
+}
+
+static uint16_t get_frag_end(ipv4_pkt_t *pkt) {
+  return get_frag_start(pkt) + get_data_size(pkt);
+}
+
 #if DBG_DISP_ENABLED(DBG_IP)
+
+static display_ip_frags(void) {
+  plat_printf("ip frags: \n");
+
+  int f_index = 0;
+  nlist_node_t *node;
+  nlist_for_each(node, &frag_list) {
+    ip_frag_t *frag = nlist_entry(node, ip_frag_t, node);
+
+    plat_printf("[%d]: \n", f_index++);
+    dbg_dump_ip(DBG_IP, "    ip: ", &frag->ip);
+    plat_printf("    id: %d\n", frag->id);
+    plat_printf("    tmo: %d\n", frag->tmo);
+    plat_printf("    bufs count: %d\n", nlist_count(&frag->buf_list));
+    plat_printf("    bufs:\n");
+
+    int p_index = 0;
+    nlist_node_t *p_node;
+    nlist_for_each(p_node, &frag->buf_list) {
+      pktbuf_t *buf = nlist_entry(p_node, pktbuf_t, node);
+
+      ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+      plat_printf("    B%d:[%d-%d], ", p_index, get_frag_start(pkt),
+                  get_frag_end(pkt) - 1);
+    }
+    plat_printf("\n");
+  }
+}
+
 static void display_ip_pkt(ipv4_pkt_t *pkt) {
   ipv4_hdr_t *ip_hdr = &pkt->hdr;
 
@@ -33,6 +74,7 @@ static void display_ip_pkt(ipv4_pkt_t *pkt) {
 
 #else
 #define display_ip_pkt(pkt)
+#define display_ip_frags()
 #endif
 
 static net_err_t frag_init(void) {
@@ -160,6 +202,7 @@ static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
     frag_add(frag, src_ip, curr->hdr.id);
   }
 
+  display_ip_frags();
   return NET_ERR_OK;
 }
 
