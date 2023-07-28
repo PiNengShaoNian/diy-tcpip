@@ -33,7 +33,25 @@ typedef struct _ipv4_hdr_t {
 
   uint16_t total_len;
   uint16_t id;
-  uint16_t frag_all;
+  union {
+#if NET_ENDIAN_LITTLE
+    struct {
+      uint16_t frag_offset : 13;
+      uint16_t more : 1;
+      uint16_t disable : 1;
+      uint16_t reserve : 1;
+    };
+#else
+    struct {
+      uint16_t reserve : 1;
+      uint16_t disable : 1;
+      uint16_t more : 1;
+      uint16_t frag_offset : 13;
+    };
+#endif
+    uint16_t frag_all;
+  };
+
   uint8_t ttl;
   uint8_t protocol;
   uint16_t hdr_checksum;
@@ -47,6 +65,14 @@ typedef struct _ipv4_pkt_t {
 } ipv4_pkt_t;
 
 #pragma pack()
+
+typedef struct _ip_frag_t {
+  ipaddr_t ip;
+  uint16_t id;
+  int tmo;
+  nlist_t buf_list;
+  nlist_node_t node;
+} ip_frag_t;
 
 net_err_t ipv4_init(void);
 
