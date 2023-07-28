@@ -70,6 +70,32 @@ static ip_frag_t *frag_alloc(void) {
   return frag;
 }
 
+static void frag_add(ip_frag_t *frag, ipaddr_t *ip, uint16_t id) {
+  ipaddr_copy(&frag->ip, ip);
+  frag->tmo = 0;
+  frag->id = id;
+  nlist_node_init(&frag->node);
+  nlist_init(&frag->buf_list);
+
+  nlist_insert_first(&frag_list, &frag->node);
+}
+
+static ip_frag_t *frag_find(ipaddr_t *ip, uint16_t id) {
+  nlist_node_t *node;
+
+  nlist_for_each(node, &frag_list) {
+    ip_frag_t *frag = nlist_entry(node, ip_frag_t, node);
+
+    if (ipaddr_is_equal(ip, &frag->ip) && (id == frag->id)) {
+      nlist_remove(&frag_list, node);
+      nlist_insert_first(&frag_list, node);
+      return frag;
+    }
+  }
+
+  return (ip_frag_t *)0;
+}
+
 net_err_t ipv4_init(void) {
   dbg_info(DBG_IP, "init ip");
 
@@ -126,7 +152,15 @@ static void iphdr_htons(ipv4_pkt_t *pkt) {
 
 static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
                             ipaddr_t *dest_ip) {
-  return NET_ERR_UNREACH;
+  ipv4_pkt_t *curr = (ipv4_pkt_t *)pktbuf_data(buf);
+
+  ip_frag_t *frag = frag_find(src_ip, curr->hdr.id);
+  if (!frag) {
+    frag = frag_alloc();
+    frag_add(frag, src_ip, curr->hdr.id);
+  }
+
+  return NET_ERR_OK;
 }
 
 static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
