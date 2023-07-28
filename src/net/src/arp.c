@@ -1,6 +1,7 @@
 #include "arp.h"
 
 #include "dbg.h"
+#include "ipv4.h"
 #include "mblock.h"
 #include "protocol.h"
 #include "timer.h"
@@ -454,4 +455,25 @@ net_err_t arp_resolve(netif_t *netif, const ipaddr_t *ipaddr, pktbuf_t *buf) {
 
     return arp_make_request(netif, ipaddr);
   }
+}
+
+void arp_update_from_ipbuf(netif_t *netif, pktbuf_t *buf) {
+  net_err_t err =
+      pktbuf_set_cont(buf, sizeof(ipv4_hdr_t) + sizeof(ether_hdr_t));
+
+  if (err < 0) {
+    dbg_error(DBG_ARP, "adjust header failed");
+    return;
+  }
+
+  ether_hdr_t *eth_hdr = (ether_hdr_t *)pktbuf_data(buf);
+  ipv4_hdr_t *ipv4_hdr =
+      (ipv4_hdr_t *)((uint8_t *)eth_hdr + sizeof(ether_hdr_t));
+
+  if (ipv4_hdr->version != NET_VERSION_IPV4) {
+    dbg_warning(DBG_ARP, "not ipv4");
+    return;
+  }
+
+  cache_insert(netif, ipv4_hdr->src_ip, eth_hdr->src, 0);
 }
