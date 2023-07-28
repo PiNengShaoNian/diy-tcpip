@@ -85,11 +85,12 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
   switch (pkt->hdr.protocol) {
     case NET_PROTOCOL_ICMPv4:
       net_err_t err = icmpv4_in(src_ip, &netif->ipaddr, buf);
+
       if (err < 0) {
         dbg_warning(DBG_IP, "icmp in failed.");
-        return err;
       }
-      break;
+
+      return err;
     case NET_PROTOCOL_UDP:
       break;
     case NET_PROTOCOL_TCP:
@@ -135,10 +136,7 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
   }
 
   err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
-
-  pktbuf_free(buf);
-
-  return NET_ERR_OK;
+  return err;
 }
 
 net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,

@@ -2,12 +2,44 @@
 
 #include "dbg.h"
 #include "ipv4.h"
+#include "protocol.h"
+
+#if DBG_DISP_ENABLED(DBG_ICMPv4)
+static void display_icmp_packet(char *title, icmpv4_pkt_t *pkt) {
+  plat_printf("-------------- %s ---------------\n", title);
+  plat_printf("  type: %d\n", pkt->hdr.type);
+  plat_printf("  code: %d\n", pkt->hdr.code);
+  plat_printf("  checksum: %d\n", pkt->hdr.checksum);
+  plat_printf("----------------------------------\n");
+}
+#else
+#define display_icmp_packet(title, pkt)
+#endif
 
 net_err_t icmpv4_init(void) {
   dbg_info(DBG_ICMPv4, "init icmp");
 
   dbg_info(DBG_ICMPv4, "init icmp done");
   return NET_ERR_OK;
+}
+
+static net_err_t icmpv4_out(ipaddr_t *dest, ipaddr_t *src, pktbuf_t *buf) {
+  icmpv4_pkt_t *pkt = (icmpv4_pkt_t *)pktbuf_data(buf);
+
+  pktbuf_reset_acc(buf);
+  pkt->hdr.checksum = pktbuf_checksum16(buf, buf->total_size, 0, 1);
+
+  return ipv4_out(NET_PROTOCOL_ICMPv4, dest, src, buf);
+}
+
+static net_err_t icmpv4_echo_reply(ipaddr_t *dest, ipaddr_t *src,
+                                   pktbuf_t *buf) {
+  icmpv4_pkt_t *pkt = (icmpv4_pkt_t *)pktbuf_data(buf);
+
+  pkt->hdr.type = ICMPv4_ECHO_REPLY;
+  pkt->hdr.checksum = 0;
+
+  return icmpv4_out(dest, src, buf);
 }
 
 static net_err_t is_pkt_ok(icmpv4_pkt_t *pkt, int size, pktbuf_t *buf) {
@@ -52,5 +84,11 @@ net_err_t icmpv4_in(ipaddr_t *src_ip, ipaddr_t *netif_ip, pktbuf_t *buf) {
     return err;
   }
 
-  return NET_ERR_OK;
+  switch (icmp_pkt->hdr.type) {
+    case ICMPv4_ECHO_REQUEST:
+      return icmpv4_echo_reply(src_ip, netif_ip, buf);
+    default:
+      pktbuf_free(buf);
+      return NET_ERR_OK;
+  }
 }

@@ -13,8 +13,8 @@ static void display_ether_pkt(char *title, ether_pkt_t *pkt, int total_size) {
   ether_hdr_t *hdr = &pkt->hdr;
   plat_printf("------------ %s ------------ \n", title);
   plat_printf("\t len : %d bytes\n", total_size);
-  dbg_dump_hwaddr("\t dest:", hdr->dest, ETHER_HWA_SIZE);
-  dbg_dump_hwaddr("\t src:", hdr->src, ETHER_HWA_SIZE);
+  dbg_dump_hwaddr(DBG_ETHER, "\t dest:", hdr->dest, ETHER_HWA_SIZE);
+  dbg_dump_hwaddr(DBG_ETHER, "\t src:", hdr->src, ETHER_HWA_SIZE);
   plat_printf("\ttype: %x ", x_ntohs(hdr->protocol));
 
   switch (x_ntohs(hdr->protocol)) {
@@ -65,6 +65,8 @@ net_err_t ether_in(struct _netif_t *netif, pktbuf_t *buf) {
     return err;
   }
 
+  display_ether_pkt("ether in", pkt, buf->total_size);
+
   switch (x_ntohs(pkt->hdr.protocol)) {
     case NET_PROTOCOL_ARP:
       err = pktbuf_remove_header(buf, sizeof(ether_hdr_t));
@@ -79,16 +81,16 @@ net_err_t ether_in(struct _netif_t *netif, pktbuf_t *buf) {
         dbg_error(DBG_ETHER, "remove header failed.");
         return NET_ERR_SIZE;
       }
-      return ipv4_in(netif, buf);
+      err = ipv4_in(netif, buf);
+      if (err < 0) {
+        dbg_warning(DBG_ETHER, "process in buf failed. err=%d", err);
+        return err;
+      }
+      return NET_ERR_OK;
     default:
       dbg_warning(DBG_ETHER, "unknow packet");
       return NET_ERR_NOT_SUPPORT;
   }
-
-  display_ether_pkt("ether in", pkt, buf->total_size);
-
-  pktbuf_free(buf);
-  return NET_ERR_OK;
 }
 
 net_err_t ether_out(struct _netif_t *netif, ipaddr_t *dest, pktbuf_t *buf) {

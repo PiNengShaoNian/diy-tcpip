@@ -316,7 +316,12 @@ net_err_t arp_make_request(netif_t *netif, const ipaddr_t *dest) {
 
   arp_pkt_display(arp_packet);
 
-  return ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
+  net_err_t err =
+      ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
+  if (err < 0) {
+    pktbuf_free(buf);
+  }
+  return err;
 }
 
 net_err_t arp_make_gratuitous(netif_t *netif) {
