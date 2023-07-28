@@ -92,3 +92,42 @@ net_err_t icmpv4_in(ipaddr_t *src_ip, ipaddr_t *netif_ip, pktbuf_t *buf) {
       return NET_ERR_OK;
   }
 }
+
+net_err_t icmpv4_out_unreach(ipaddr_t *dest_ip, ipaddr_t *src, uint8_t code,
+                             pktbuf_t *ip_buf) {
+  int copy_size = ipv4_hdr_size((ipv4_pkt_t *)pktbuf_data(ip_buf)) + 576;
+
+  if (copy_size > ip_buf->total_size) {
+    copy_size = ip_buf->total_size;
+  }
+
+  pktbuf_t *new_buf = pktbuf_alloc(copy_size + sizeof(icmpv4_hdr_t) + 4);
+  if (!new_buf) {
+    dbg_warning(DBG_ICMPv4, "alloc buf failed");
+    return NET_ERR_NONE;
+  }
+
+  icmpv4_pkt_t *pkt = (icmpv4_pkt_t *)pktbuf_data(new_buf);
+  pkt->hdr.type = ICMPv4_UNREACH;
+  pkt->hdr.code = code;
+  pkt->hdr.checksum = 0;
+  pkt->reserve = 0;
+
+  pktbuf_reset_acc(ip_buf);
+  pktbuf_seek(new_buf, sizeof(icmpv4_hdr_t) + 4);
+  net_err_t err = pktbuf_copy(new_buf, ip_buf, copy_size);
+  if (err < 0) {
+    dbg_error(DBG_ICMPv4, "copy failed");
+    pktbuf_free(new_buf);
+    return err;
+  }
+
+  err = icmpv4_out(dest_ip, src, new_buf);
+  if (err < 0) {
+    dbg_error(DBG_ICMPv4, "send icmp unreach");
+    pktbuf_free(new_buf);
+    return err;
+  }
+
+  return NET_ERR_OK;
+}
