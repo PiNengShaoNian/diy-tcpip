@@ -42,6 +42,34 @@ static net_err_t frag_init(void) {
   return err;
 }
 
+static void frag_free_buf_list(ip_frag_t *frag) {
+  nlist_node_t *node;
+  while (node = nlist_remove_first(&frag->buf_list)) {
+    pktbuf_t *buf = nlist_entry(node, pktbuf_t, node);
+    pktbuf_free(buf);
+  }
+}
+
+static void frag_free(ip_frag_t *frag) {
+  frag_free_buf_list(frag);
+  nlist_remove(&frag_list, &frag->node);
+  mblock_free(&frag_mblock, frag);
+}
+
+static ip_frag_t *frag_alloc(void) {
+  ip_frag_t *frag = mblock_alloc(&frag_mblock, -1);
+
+  if (!frag) {
+    nlist_node_t *node = nlist_remove_last(&frag_list);
+    frag = nlist_entry(node, ip_frag_t, node);
+    if (frag) {
+      frag_free_buf_list(frag);
+    }
+  }
+
+  return frag;
+}
+
 net_err_t ipv4_init(void) {
   dbg_info(DBG_IP, "init ip");
 
@@ -94,6 +122,11 @@ static void iphdr_htons(ipv4_pkt_t *pkt) {
   pkt->hdr.total_len = x_htons(pkt->hdr.total_len);
   pkt->hdr.id = x_htons(pkt->hdr.id);
   pkt->hdr.frag_all = x_htons(pkt->hdr.frag_all);
+}
+
+static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
+                            ipaddr_t *dest_ip) {
+  return NET_ERR_UNREACH;
 }
 
 static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
@@ -157,7 +190,12 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
     return NET_ERR_UNREACH;
   }
 
-  err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
+  if (pkt->hdr.frag_offset || pkt->hdr.more) {
+    err = ip_frag_in(netif, buf, &src_ip, &dest_ip);
+  } else {
+    err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
+  }
+
   return err;
 }
 
