@@ -8,6 +8,7 @@
 #include "net.h"
 #include "netif.h"
 #include "nlist.h"
+#include "ping/ping.h"
 #include "pktbuf.h"
 #include "sys_plat.h"
 #include "timer.h"
@@ -378,6 +379,9 @@ int main(int argc, char **argv) {
   net_start();
 
   netdev_init();
+
+  ping_t p;
+  ping_run(&p, friend0_ip, 4, 64, 1000);
 
   while (1) {
     sys_sleep(10);
