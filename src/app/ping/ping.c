@@ -1,6 +1,7 @@
 #include "ping.h"
 
 #include <WinSock2.h>
+#include <time.h>
 
 #include "sys_plat.h"
 
@@ -65,6 +66,8 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
       break;
     }
 
+    clock_t time = clock();
+
     memset(&ping->reply, 0, sizeof(ping->reply));
 
     do {
@@ -83,7 +86,33 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
       }
     } while (1);
 
-    printf("recv ping\n");
+    if (size > 0) {
+      int recv_size = size - sizeof(ip_hdr_t) - sizeof(icmp_hdr_t);
+      if (memcmp(ping->req.buf, ping->reply.buf, recv_size) != 0) {
+        printf("recv data error\n");
+        continue;
+      }
+
+      ip_hdr_t *iphdr = &ping->reply.iphdr;
+      int send_size = fill_size;
+      if (recv_size == send_size) {
+        printf("reply from %s: bytes=%d, ", inet_ntoa(addr.sin_addr),
+               recv_size);
+      } else {
+        printf("reply from %s: bytes=%d (send=%d), ", inet_ntoa(addr.sin_addr),
+               recv_size, send_size);
+      }
+
+      int diff_ms = (clock() - time) / (CLOCKS_PER_SEC / 1000);
+
+      if (diff_ms < 1) {
+        printf(" time < 1ms, TTL=%d\n", iphdr->ttl);
+      } else {
+        printf(" time   %dms, TTL=%d\n", diff_ms, iphdr->ttl);
+      }
+    }
+
+    sys_sleep(interval);
   }
 
   closesocket(s);
