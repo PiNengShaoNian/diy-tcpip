@@ -5,6 +5,8 @@
 
 #define PING_BUFFER_SIZE 4096
 
+#define PING_DEFAULT_ID 0x300
+
 #pragma pack(1)
 
 typedef struct _ip_hdr_t {
