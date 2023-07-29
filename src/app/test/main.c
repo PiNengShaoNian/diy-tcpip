@@ -381,10 +381,14 @@ int main(int argc, char **argv) {
   netdev_init();
 
   ping_t p;
-  ping_run(&p, friend0_ip, 4, 64, 1000);
+  char cmd[32], param[32];
 
   while (1) {
-    sys_sleep(10);
+    printf(">>");
+    scanf("%s%s", cmd, param);
+    if (strcmp(cmd, "ping") == 0) {
+      ping_run(&p, param, 4, 1000, 1000);
+    }
   }
 
   return 0;
