@@ -168,6 +168,64 @@ static net_err_t frag_insert(ip_frag_t *frag, pktbuf_t *buf, ipv4_pkt_t *pkt) {
   return NET_ERR_OK;
 }
 
+static int frag_is_all_arrived(ip_frag_t *frag) {
+  int offset = 0;
+  ipv4_pkt_t *pkt = (ipv4_pkt_t *)0;
+  nlist_node_t *node;
+  nlist_for_each(node, &frag->buf_list) {
+    pktbuf_t *buf = nlist_entry(node, pktbuf_t, node);
+    pkt = (ipv4_pkt_t *)pktbuf_data(buf);
+
+    int curr_offset = get_frag_start(pkt);
+    if (curr_offset != offset) {
+      return 0;
+    }
+
+    offset += get_data_size(pkt);
+  }
+
+  return pkt ? !pkt->hdr.more : 0;
+}
+
+static pktbuf_t *frag_join(ip_frag_t *frag) {
+  pktbuf_t *target = (pktbuf_t *)0;
+  nlist_node_t *node;
+  while (node = nlist_remove_first(&frag->buf_list)) {
+    pktbuf_t *curr = nlist_entry(node, pktbuf_t, node);
+
+    if (!target) {
+      target = curr;
+      continue;
+    }
+
+    ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(curr);
+    net_err_t err = pktbuf_remove_header(curr, ipv4_hdr_size(pkt));
+    if (err < 0) {
+      dbg_error(DBG_IP, "remove hdr failed.");
+      pktbuf_free(curr);
+      goto fail;
+    }
+
+    err = pktbuf_join(target, curr);
+
+    if (err < 0) {
+      dbg_error(DBG_IP, "pktbuf join failed.");
+      pktbuf_free(curr);
+      goto fail;
+    }
+  }
+
+  frag_free(frag);
+  return target;
+
+fail:
+  if (target) {
+    pktbuf_free(target);
+  }
+  frag_free(frag);
+  return (pktbuf_t *)0;
+}
+
 net_err_t ipv4_init(void) {
   dbg_info(DBG_IP, "init ip");
 
@@ -222,26 +280,6 @@ static void iphdr_htons(ipv4_pkt_t *pkt) {
   pkt->hdr.frag_all = x_htons(pkt->hdr.frag_all);
 }
 
-static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
-                            ipaddr_t *dest_ip) {
-  ipv4_pkt_t *curr = (ipv4_pkt_t *)pktbuf_data(buf);
-
-  ip_frag_t *frag = frag_find(src_ip, curr->hdr.id);
-  if (!frag) {
-    frag = frag_alloc();
-    frag_add(frag, src_ip, curr->hdr.id);
-  }
-
-  net_err_t err = frag_insert(frag, buf, curr);
-  if (err < 0) {
-    dbg_warning(DBG_IP, "frag insert failed.");
-    return err;
-  }
-
-  display_ip_frags();
-  return NET_ERR_OK;
-}
-
 static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
                               ipaddr_t *dest_ip) {
   ipv4_pkt_t *pkt = (ipv4_pkt_t *)pktbuf_data(buf);
@@ -269,6 +307,44 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
   }
 
   return NET_ERR_UNREACH;
+}
+
+static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
+                            ipaddr_t *dest_ip) {
+  ipv4_pkt_t *curr = (ipv4_pkt_t *)pktbuf_data(buf);
+
+  ip_frag_t *frag = frag_find(src_ip, curr->hdr.id);
+  if (!frag) {
+    frag = frag_alloc();
+    frag_add(frag, src_ip, curr->hdr.id);
+  }
+
+  net_err_t err = frag_insert(frag, buf, curr);
+  if (err < 0) {
+    dbg_warning(DBG_IP, "frag insert failed.");
+    return err;
+  }
+
+  display_ip_frags();
+
+  if (frag_is_all_arrived(frag)) {
+    pktbuf_t *full_buf = frag_join(frag);
+    if (!full_buf) {
+      dbg_error(DBG_IP, "join ip bufs failed.");
+      display_ip_frags();
+      return NET_ERR_OK;
+    }
+
+    err = ip_normal_in(netif, full_buf, src_ip, dest_ip);
+    if (err < 0) {
+      dbg_warning(DBG_IP, "fp frag in failed.");
+      pktbuf_free(full_buf);
+      return NET_ERR_OK;
+    }
+  }
+
+  display_ip_frags();
+  return NET_ERR_OK;
 }
 
 net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
