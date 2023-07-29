@@ -138,6 +138,36 @@ static ip_frag_t *frag_find(ipaddr_t *ip, uint16_t id) {
   return (ip_frag_t *)0;
 }
 
+static net_err_t frag_insert(ip_frag_t *frag, pktbuf_t *buf, ipv4_pkt_t *pkt) {
+  if (nlist_count(&frag->buf_list) >= IP_FRAG_MAX_BUF_NR) {
+    dbg_warning(DBG_IP, "too many bufs on frag");
+    frag_free(frag);
+    return NET_ERR_FULL;
+  }
+
+  nlist_node_t *node;
+  nlist_for_each(node, &frag->buf_list) {
+    pktbuf_t *curr_buf = nlist_entry(node, pktbuf_t, node);
+    ipv4_pkt_t *curr_pkt = (ipv4_pkt_t *)pktbuf_data(curr_buf);
+
+    uint64_t curr_start = get_frag_start(curr_pkt);
+    if (get_frag_start(pkt) == curr_start) {
+      return NET_ERR_EXIST;
+    } else if (get_frag_end(pkt) <= curr_start) {
+      nlist_node_t *pre = nlist_node_pre(node);
+      if (pre) {
+        nlist_insert_after(&frag->buf_list, pre, &buf->node);
+      } else {
+        nlist_insert_first(&frag->buf_list, &buf->node);
+      }
+      return NET_ERR_OK;
+    }
+  }
+
+  nlist_insert_last(&frag->buf_list, &buf->node);
+  return NET_ERR_OK;
+}
+
 net_err_t ipv4_init(void) {
   dbg_info(DBG_IP, "init ip");
 
@@ -200,6 +230,12 @@ static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
   if (!frag) {
     frag = frag_alloc();
     frag_add(frag, src_ip, curr->hdr.id);
+  }
+
+  net_err_t err = frag_insert(frag, buf, curr);
+  if (err < 0) {
+    dbg_warning(DBG_IP, "frag insert failed.");
+    return err;
   }
 
   display_ip_frags();

@@ -42,5 +42,6 @@
 #define ARP_ENTRY_RETRY_CNT 5
 
 #define IP_FRAGS_MAX_NR 5
+#define IP_FRAG_MAX_BUF_NR 10
 
 #endif
