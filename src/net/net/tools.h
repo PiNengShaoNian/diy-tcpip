@@ -31,6 +31,7 @@ static inline uint32_t swap_u32(uint32_t v) {
 #define x_ntohl(v) v
 #endif
 
-uint16_t checksum_16(void *buf, uint16_t len, uint32_t pre_sum, int complement);
+uint16_t checksum_16(uint32_t offset, void *buf, uint16_t len, uint32_t pre_sum,
+                     int complement);
 
 #endif

@@ -21,10 +21,15 @@ net_err_t tools_init(void) {
   return NET_ERR_OK;
 }
 
-uint16_t checksum_16(void *buf, uint16_t len, uint32_t pre_sum,
+uint16_t checksum_16(uint32_t offset, void *buf, uint16_t len, uint32_t pre_sum,
                      int complement) {
   uint16_t *curr_buf = (uint16_t *)buf;
   uint32_t checksum = pre_sum;
+
+  if (offset & 0x1) {
+    checksum += *((uint8_t *)curr_buf)++ << 8;
+    len -= 1;
+  }
 
   while (len > 1) {
     checksum += *curr_buf++;

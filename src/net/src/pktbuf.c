@@ -622,14 +622,17 @@ uint16_t pktbuf_checksum16(pktbuf_t *buf, int size, uint32_t pre_sum,
   }
 
   uint32_t sum = pre_sum;
+
+  uint32_t offset = 0;
   while (size > 0) {
     int blk_size = curr_blk_remain(buf);
     int curr_size = (blk_size > size) ? size : blk_size;
 
-    sum = checksum_16(buf->blk_offset, curr_size, sum, 0);
+    sum = checksum_16(offset, buf->blk_offset, curr_size, sum, 0);
 
     move_forward(buf, curr_size);
     size -= curr_size;
+    offset += curr_size;
   }
 
   return complement ? (uint16_t)~sum : (uint16_t)sum;
