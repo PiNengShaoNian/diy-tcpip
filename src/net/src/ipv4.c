@@ -4,6 +4,7 @@
 #include "icmpv4.h"
 #include "mblock.h"
 #include "protocol.h"
+#include "timer.h"
 #include "tools.h"
 
 static uint16_t packet_id = 0;
@@ -11,6 +12,7 @@ static uint16_t packet_id = 0;
 static ip_frag_t frag_array[IP_FRAGS_MAX_NR];
 static mblock_t frag_mblock;
 static nlist_t frag_list;
+static net_timer_t frag_timer;
 
 static int get_data_size(ipv4_pkt_t *pkt) {
   return pkt->hdr.total_len - ipv4_hdr_size(pkt);
@@ -77,13 +79,6 @@ static void display_ip_pkt(ipv4_pkt_t *pkt) {
 #define display_ip_frags()
 #endif
 
-static net_err_t frag_init(void) {
-  nlist_init(&frag_list);
-  net_err_t err = mblock_init(&frag_mblock, frag_array, sizeof(ip_frag_t),
-                              IP_FRAGS_MAX_NR, NLOCKER_NONE);
-  return err;
-}
-
 static void frag_free_buf_list(ip_frag_t *frag) {
   nlist_node_t *node;
   while (node = nlist_remove_first(&frag->buf_list)) {
@@ -114,7 +109,7 @@ static ip_frag_t *frag_alloc(void) {
 
 static void frag_add(ip_frag_t *frag, ipaddr_t *ip, uint16_t id) {
   ipaddr_copy(&frag->ip, ip);
-  frag->tmo = 0;
+  frag->tmo = IP_FRAG_TMO / IP_FRAG_SCAN_PERIOD;
   frag->id = id;
   nlist_node_init(&frag->node);
   nlist_init(&frag->buf_list);
@@ -224,6 +219,38 @@ fail:
   }
   frag_free(frag);
   return (pktbuf_t *)0;
+}
+
+static void frag_tmo(net_timer_t *timer, void *arg) {
+  nlist_node_t *curr;
+  nlist_node_t *next;
+
+  for (curr = nlist_first(&frag_list); curr; curr = next) {
+    next = nlist_node_next(curr);
+
+    ip_frag_t *frag = nlist_entry(curr, ip_frag_t, node);
+    if (--frag->tmo <= 0) {
+      frag_free(frag);
+    }
+  }
+}
+
+static net_err_t frag_init(void) {
+  nlist_init(&frag_list);
+  net_err_t err = mblock_init(&frag_mblock, frag_array, sizeof(ip_frag_t),
+                              IP_FRAGS_MAX_NR, NLOCKER_NONE);
+  if (err < 0) {
+    dbg_error(DBG_IP, "mblock init failed.");
+    return err;
+  }
+
+  err = net_timer_add(&frag_timer, "frag timer", frag_tmo, (void *)0,
+                      IP_FRAG_SCAN_PERIOD * 1000, NET_TIMER_RELOAD);
+  if (err < 0) {
+    dbg_error(DBG_IP, "create frag timer failed.");
+  }
+
+  return err;
 }
 
 net_err_t ipv4_init(void) {
