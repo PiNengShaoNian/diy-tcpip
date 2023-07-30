@@ -1,5 +1,7 @@
 #include "sock.h"
 
+#include "dbg.h"
+#include "exmsg.h"
 #include "sys.h"
 
 #define SOCKET_MAX_NR 10
@@ -35,5 +37,19 @@ static void socket_free(x_socket_t *s) { s->state = SOCKET_STATE_FREE; }
 
 net_err_t socket_init(void) {
   plat_memset(socket_tbl, 0, sizeof(socket_tbl));
+  return NET_ERR_OK;
+}
+
+net_err_t sock_create_req_in(func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = socket_alloc();
+  if (!s) {
+    dbg_error(DBG_SOCKET, "no socket");
+    return NET_ERR_MEM;
+  }
+
+  req->sockfd = get_index(s);
+
   return NET_ERR_OK;
 }

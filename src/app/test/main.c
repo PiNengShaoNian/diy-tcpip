@@ -387,11 +387,10 @@ int main(int argc, char **argv) {
 
   netdev_init();
 
-  int arg = 0x1234;
-  exmsg_func_exec(test_func, &arg);
-
   ping_t p;
   char cmd[32], param[32];
+
+  ping_run(&p, friend0_ip, 4, 1000, 1000);
 
   while (1) {
     printf(">>");
