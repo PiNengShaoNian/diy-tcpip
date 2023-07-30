@@ -3,9 +3,10 @@
 #include <WinSock2.h>
 #include <time.h>
 
+#include "net_api.h"
 #include "sys_plat.h"
 
-static uint16_t checksum_16(void *buf, uint16_t len) {
+static uint16_t x_checksum_16(void *buf, uint16_t len) {
   uint16_t *curr_buf = (uint16_t *)buf;
   uint32_t checksum = 0;
 
@@ -65,7 +66,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
     ping->req.echo_hdr.checksum = 0;
     ping->req.echo_hdr.id = start_id;
     ping->req.echo_hdr.seq = seq;
-    ping->req.echo_hdr.checksum = checksum_16(&ping->req, total_size);
+    ping->req.echo_hdr.checksum = x_checksum_16(&ping->req, total_size);
 
 #if 0
     int size = sendto(s, (const char *)&ping->req, total_size, 0,
