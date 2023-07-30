@@ -18,6 +18,8 @@ typedef struct _func_msg_t {
   exmsg_func_t func;
   void *param;
   net_err_t err;
+
+  sys_sem_t wait_sem;
 } func_msg_t;
 
 typedef struct _exmsg_t {
