@@ -10,6 +10,7 @@
 #include "net_plat.h"
 #include "netif.h"
 #include "pktbuf.h"
+#include "sock.h"
 #include "timer.h"
 #include "tools.h"
 
@@ -31,6 +32,8 @@ net_err_t net_init(void) {
   arp_init();
   ipv4_init();
   icmpv4_init();
+
+  socket_init();
 
   return NET_ERR_OK;
 }
