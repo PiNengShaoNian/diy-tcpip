@@ -40,6 +40,23 @@ net_err_t socket_init(void) {
   return NET_ERR_OK;
 }
 
+net_err_t sock_init(sock_t *sock, int family, int protocol,
+                    const sock_ops_t *ops) {
+  sock->protocol = protocol;
+  sock->family = family;
+  sock->ops = ops;
+
+  ipaddr_set_any(&sock->local_ip);
+  ipaddr_set_any(&sock->remote_ip);
+  sock->local_port = 0;
+  sock->remote_port = 0;
+  sock->err = NET_ERR_OK;
+  sock->rcv_tmo = 0;
+  sock->snd_tmo = 0;
+  nlist_node_init(&sock->node);
+  return NET_ERR_OK;
+}
+
 net_err_t sock_create_req_in(func_msg_t *msg) {
   sock_req_t *req = (sock_req_t *)msg->param;
 

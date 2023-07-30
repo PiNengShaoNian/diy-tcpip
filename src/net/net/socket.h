@@ -32,6 +32,12 @@ struct x_in_addr {
   };
 };
 
+struct x_sockaddr {
+  uint8_t sin_len;
+  uint8_t sin_family;
+  uint8_t sa_data[14];
+};
+
 struct x_sockaddr_in {
   uint8_t sin_len;
   uint8_t sin_family;
