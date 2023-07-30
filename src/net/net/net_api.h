@@ -35,4 +35,6 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
 
 #define sockaddr_in x_sockaddr_in
 
+#define socket(family, type, protocol) x_socket(family, type, protocol)
+
 #endif
