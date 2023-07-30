@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
+#include "exmsg.h"
 #include "ipv4.h"
 #include "mblock.h"
 #include "net.h"
@@ -365,6 +366,12 @@ void basic_test(void) {
 
 #define DBG_TEST DBG_LEVEL_INFO
 
+net_err_t test_func(func_msg_t *msg) {
+  printf("test %p\n", msg->param);
+
+  return NET_ERR_OK;
+}
+
 int main(int argc, char **argv) {
   dbg_info(DBG_TEST, "info");
   dbg_warning(DBG_TEST, "warning");
@@ -379,6 +386,9 @@ int main(int argc, char **argv) {
   net_start();
 
   netdev_init();
+
+  int arg = 0x1234;
+  exmsg_func_exec(test_func, &arg);
 
   ping_t p;
   char cmd[32], param[32];

@@ -14,6 +14,8 @@ static fixq_t msg_queue;
 static exmsg_t msg_buffer[EXMSG_MSG_CNT];
 static mblock_t msg_block;
 
+net_err_t exmsg_func_exec(exmsg_func_t func, void *param) { return NET_ERR_OK; }
+
 net_err_t exmsg_init(void) {
   dbg_info(DBG_MSG, "exmsg init");
 
