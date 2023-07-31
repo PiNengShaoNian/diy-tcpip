@@ -7,6 +7,8 @@ void ipaddr_set_any(ipaddr_t* ip) {
   ip->q_addr = 0;
 }
 
+int ipaddr_is_any(ipaddr_t* ip) { return ip->q_addr == 0; }
+
 net_err_t ipaddr_from_str(ipaddr_t* dest, const char* str) {
   if (!dest || !str) {
     return NET_ERR_PARAM;

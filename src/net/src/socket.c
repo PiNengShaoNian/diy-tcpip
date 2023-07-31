@@ -60,5 +60,3 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
 
   return send_size;
 }
-
-net_err_t sock_send_req_in(struct _func_msg_t* msg) { return NET_ERR_OK; }

@@ -16,7 +16,7 @@
 #define SOCK_RAW 0
 
 #undef IPPROTO_ICMP
-#define IPPROTO_ICMP 0
+#define IPPROTO_ICMP 1
 
 struct x_in_addr {
   union {
