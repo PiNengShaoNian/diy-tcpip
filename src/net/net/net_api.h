@@ -45,5 +45,6 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
   x_recvfrom(s, buf, len, flags, src, slen)
 #define setsockopt(s, level, optname, optval, len) \
   x_setsockopt(s, level, optname, optval, len)
+#define close(s) x_close(s)
 
 #endif

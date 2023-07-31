@@ -133,3 +133,19 @@ int x_setsockopt(int s, int level, int optname, const char* optval, int len) {
 
   return 0;
 }
+
+int x_close(int s) {
+  sock_req_t req;
+
+  req.wait = (sock_wait_t*)0;
+  req.wait_tmo = 0;
+  req.sockfd = s;
+
+  net_err_t err = exmsg_func_exec(sock_close_req_in, &req);
+  if (err < 0) {
+    dbg_error(DBG_SOCKET, "close failed.");
+    return -1;
+  }
+
+  return 0;
+}
