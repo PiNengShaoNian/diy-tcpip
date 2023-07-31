@@ -18,6 +18,19 @@
 #undef IPPROTO_ICMP
 #define IPPROTO_ICMP 1
 
+#undef SOL_SOCKET
+#define SOL_SOCKET 0
+
+#undef SO_RCVTIMEO
+#define SO_RCVTIMEO 1
+#undef SO_SNDTIMEO
+#define SO_SNDTIMEO 2
+
+struct x_timeval {
+  int tv_sec;
+  int tv_usec;
+};
+
 struct x_in_addr {
   union {
     struct {
@@ -52,5 +65,6 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
                  const struct x_sockaddr* dest, x_socklen_t dlen);
 ssize_t x_recvfrom(int s, const void* buf, size_t len, int flags,
                    const struct x_sockaddr* src, x_socklen_t* slen);
+int x_setsockopt(int s, int level, int optname, const char* optval, int len);
 
 #endif

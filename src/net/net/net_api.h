@@ -36,11 +36,14 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
 #define sockaddr x_sockaddr
 #define sockaddr_in x_sockaddr_in
 #define socklen_t x_socklen_t
+#define timeval x_timeval
 
 #define socket(family, type, protocol) x_socket(family, type, protocol)
 #define sendto(s, buf, len, flags, dest, dlen) \
   x_sendto(s, buf, len, flags, dest, dlen)
 #define recvfrom(s, buf, len, flags, src, slen) \
   x_recvfrom(s, buf, len, flags, src, slen)
+#define setsockopt(s, level, optname, optval, len) \
+  x_setsockopt(s, level, optname, optval, len)
 
 #endif
