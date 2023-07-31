@@ -112,6 +112,8 @@ net_err_t sock_create_req_in(struct _func_msg_t *msg);
 net_err_t sock_send_req_in(struct _func_msg_t *msg);
 net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
 net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
+net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
+                      const char *optval, int optlen);
 
 net_err_t sock_init(sock_t *sock, int family, int protocol,
                     const sock_ops_t *ops);

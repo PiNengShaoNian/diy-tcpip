@@ -235,4 +235,51 @@ net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
   return err;
 }
 
-net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
+                      const char *optval, int optlen) {
+  if (level != SOL_SOCKET) {
+    dbg_error(DBG_SOCKET, "unknown level");
+    return NET_ERR_PARAM;
+  }
+
+  switch (optname) {
+    case SO_RCVTIMEO:
+    case SO_SNDTIMEO:
+      if (optlen != sizeof(struct x_timeval)) {
+        dbg_error(DBG_SOCKET, "time size error");
+        return NET_ERR_PARAM;
+      }
+
+      struct x_timeval *time = (struct x_timeval *)optval;
+      int time_ms = time->tv_sec * 1000 + time->tv_usec / 1000;
+      if (optname == SO_RCVTIMEO) {
+        s->rcv_tmo = time_ms;
+        return NET_ERR_OK;
+      } else if (optname == SO_SNDTIMEO) {
+        s->snd_tmo = time_ms;
+        return NET_ERR_OK;
+      } else {
+        return NET_ERR_PARAM;
+      }
+    default:
+      break;
+  }
+
+  return NET_ERR_PARAM;
+}
+
+net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+  sock_opt_t *opt = &req->opt;
+
+  return sock->ops->setopt(sock, opt->level, opt->optname, opt->optval,
+                           opt->len);
+}

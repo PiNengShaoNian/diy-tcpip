@@ -72,6 +72,7 @@ sock_t *raw_create(int family, int protocol) {
   static const sock_ops_t raw_ops = {
       .sendto = raw_sendto,
       .recvfrom = raw_recvfrom,
+      .setopt = sock_setopt,
   };
   raw_t *raw = mblock_alloc(&raw_mblock, -1);
 
