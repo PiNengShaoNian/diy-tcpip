@@ -49,6 +49,34 @@ net_err_t sock_wait_init(sock_wait_t *wait) {
   return NET_ERR_OK;
 }
 
+void sock_wait_destroy(sock_wait_t *wait) {
+  if (wait->sem != SYS_SEM_INVALID) {
+    sys_sem_free(wait->sem);
+  }
+}
+
+void sock_wait_add(sock_wait_t *wait, int tmo, struct _sock_req_t *req) {
+  wait->waiting++;
+  req->wait = wait;
+  req->wait_tmo = tmo;
+}
+
+net_err_t sock_wait_enter(sock_wait_t *wait, int tmo) {
+  if (sys_sem_wait(wait->sem, tmo) < 0) {
+    return NET_ERR_TMO;
+  }
+
+  return wait->err;
+}
+
+void sock_wait_leave(sock_wait_t *wait, net_err_t err) {
+  if (wait->waiting > 0) {
+    wait->waiting--;
+    sys_sem_notify(wait->sem);
+    wait->err = err;
+  }
+}
+
 net_err_t socket_init(void) {
   plat_memset(socket_tbl, 0, sizeof(socket_tbl));
   return NET_ERR_OK;

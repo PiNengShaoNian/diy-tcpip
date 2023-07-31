@@ -10,6 +10,7 @@
 
 struct _sock_t;
 struct x_sockaddr;
+struct _sock_req_t;
 typedef int x_socklen_t;
 
 #define SOCK_WAIT_READ (1 << 0)
@@ -24,6 +25,10 @@ typedef struct _sock_wait_t {
 } sock_wait_t;
 
 net_err_t sock_wait_init(sock_wait_t *wait);
+void sock_wait_destroy(sock_wait_t *wait);
+void sock_wait_add(sock_wait_t *wait, int tmo, struct _sock_req_t *req);
+net_err_t sock_wait_enter(sock_wait_t *wait, int tmo);
+void sock_wait_leave(sock_wait_t *wait, net_err_t err);
 
 typedef struct _sock_ops_t {
   net_err_t (*close)(struct _sock_t *sock);
@@ -81,6 +86,8 @@ typedef struct _sock_data_t {
 } sock_data_t;
 
 typedef struct _sock_req_t {
+  sock_wait_t *wait;
+  int wait_tmo;
   int sockfd;
   union {
     sock_create_t create;
