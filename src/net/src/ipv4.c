@@ -4,6 +4,7 @@
 #include "icmpv4.h"
 #include "mblock.h"
 #include "protocol.h"
+#include "raw.h"
 #include "timer.h"
 #include "tools.h"
 
@@ -328,9 +329,16 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
       break;
     case NET_PROTOCOL_TCP:
       break;
-    default:
+    default: {
       dbg_warning(DBG_IP, "unknown protocol");
+
+      net_err_t err = raw_in(buf);
+      if (err < 0) {
+        dbg_warning(DBG_IP, "raw in error");
+        return err;
+      }
       break;
+    }
   }
 
   return NET_ERR_UNREACH;

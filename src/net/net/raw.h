@@ -1,6 +1,8 @@
 #ifndef RAW_H
 #define RAW_H
 
+#include "net_err.h"
+#include "pktbuf.h"
 #include "sock.h"
 
 typedef struct _raw_t {
@@ -10,5 +12,6 @@ typedef struct _raw_t {
 
 net_err_t raw_init(void);
 sock_t *raw_create(int family, int protocol);
+net_err_t raw_in(pktbuf_t *pktbuf);
 
 #endif

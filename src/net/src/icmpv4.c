@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "ipv4.h"
 #include "protocol.h"
+#include "raw.h"
 
 #if DBG_DISP_ENABLED(DBG_ICMPv4)
 static void display_icmp_packet(char *title, icmpv4_pkt_t *pkt) {
@@ -62,33 +63,40 @@ net_err_t icmpv4_in(ipaddr_t *src_ip, ipaddr_t *netif_ip, pktbuf_t *buf) {
 
   ipv4_pkt_t *ip_pkt = (ipv4_pkt_t *)pktbuf_data(buf);
   int iphdr_size = ipv4_hdr_size(ip_pkt);
-  net_err_t err = pktbuf_set_cont(buf, iphdr_size + sizeof(icmpv4_hdr_t));
 
+  net_err_t err = pktbuf_set_cont(buf, iphdr_size + sizeof(icmpv4_hdr_t));
   if (err < 0) {
     dbg_error(DBG_ICMPv4, "set icmp cont failed.");
     return err;
   }
 
   ip_pkt = (ipv4_pkt_t *)pktbuf_data(buf);
-  err = pktbuf_remove_header(buf, iphdr_size);
 
-  if (err < 0) {
-    dbg_error(DBG_ICMPv4, "remove ip header failed.");
-    return err;
-  }
-
-  pktbuf_reset_acc(buf);
-  icmpv4_pkt_t *icmp_pkt = (icmpv4_pkt_t *)pktbuf_data(buf);
+  icmpv4_pkt_t *icmp_pkt = (icmpv4_pkt_t *)(pktbuf_data(buf) + iphdr_size);
+  pktbuf_seek(buf, iphdr_size);
   if ((err = is_pkt_ok(icmp_pkt, buf->total_size, buf)) < 0) {
     dbg_warning(DBG_ICMPv4, "icmp pkt error.");
     return err;
   }
 
   switch (icmp_pkt->hdr.type) {
-    case ICMPv4_ECHO_REQUEST:
+    case ICMPv4_ECHO_REQUEST: {
+      err = pktbuf_remove_header(buf, iphdr_size);
+
+      if (err < 0) {
+        dbg_error(DBG_ICMPv4, "remove ip header failed.");
+        return err;
+      }
+
+      pktbuf_reset_acc(buf);
       return icmpv4_echo_reply(src_ip, netif_ip, buf);
+    }
     default:
-      pktbuf_free(buf);
+      err = raw_in(buf);
+      if (err < 0) {
+        dbg_error(DBG_ICMPv4, "raw in failed.");
+        return err;
+      }
       return NET_ERR_OK;
   }
 }

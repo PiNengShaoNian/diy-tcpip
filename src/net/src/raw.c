@@ -99,3 +99,45 @@ create_failed:
   sock_uninit(&raw->base);
   return (sock_t *)0;
 }
+
+static raw_t *raw_find(ipaddr_t *src, ipaddr_t *dest, int protocol) {
+  nlist_node_t *node;
+
+  nlist_for_each(node, &raw_list) {
+    raw_t *raw = (raw_t *)nlist_entry(node, sock_t, node);
+
+    if (raw->base.protocol && (raw->base.protocol != protocol)) {
+      continue;
+    }
+
+    if (!ipaddr_is_any(&raw->base.remote_ip) &&
+        !ipaddr_is_equal(&raw->base.remote_ip, src)) {
+      continue;
+    }
+
+    if (!ipaddr_is_any(&raw->base.local_ip) &&
+        !ipaddr_is_equal(&raw->base.local_ip, dest)) {
+      continue;
+    }
+
+    return raw;
+  }
+
+  return (raw_t *)0;
+}
+
+net_err_t raw_in(pktbuf_t *pktbuf) {
+  ipv4_hdr_t *iphdr = (ipv4_hdr_t *)pktbuf_data(pktbuf);
+
+  ipaddr_t src, dest;
+  ipaddr_from_buf(&dest, iphdr->dest_ip);
+  ipaddr_from_buf(&src, iphdr->src_ip);
+
+  raw_t *raw = raw_find(&src, &dest, iphdr->protocol);
+  if (!raw) {
+    dbg_warning(DBG_RAW, "no raw for this packet");
+    return NET_ERR_UNREACH;
+  }
+
+  return NET_ERR_OK;
+}
