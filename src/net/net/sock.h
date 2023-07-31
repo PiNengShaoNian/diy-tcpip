@@ -12,6 +12,19 @@ struct _sock_t;
 struct x_sockaddr;
 typedef int x_socklen_t;
 
+#define SOCK_WAIT_READ (1 << 0)
+#define SOCK_WAIT_WRITE (1 << 1)
+#define SOCK_WAIT_CONN (1 << 2)
+#define SOCK_WAIT_ALL (SOCK_WAIT_READ | SOCK_WAIT_WRITE | SOCK_WAIT_CONN)
+
+typedef struct _sock_wait_t {
+  sys_sem_t sem;
+  net_err_t err;
+  int waiting;
+} sock_wait_t;
+
+net_err_t sock_wait_init(sock_wait_t *wait);
+
 typedef struct _sock_ops_t {
   net_err_t (*close)(struct _sock_t *sock);
   net_err_t (*sendto)(struct _sock_t *sock, const void *buf, size_t len,

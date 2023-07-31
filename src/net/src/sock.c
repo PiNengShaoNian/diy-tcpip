@@ -37,6 +37,18 @@ static x_socket_t *socket_alloc(void) {
 
 static void socket_free(x_socket_t *s) { s->state = SOCKET_STATE_FREE; }
 
+net_err_t sock_wait_init(sock_wait_t *wait) {
+  wait->waiting = 0;
+  wait->err = NET_ERR_OK;
+  wait->sem = sys_sem_create(0);
+  if (wait->sem == SYS_SEM_INVALID) {
+    dbg_error(DBG_SOCKET, "sem create failed");
+    return NET_ERR_SYS;
+  }
+
+  return NET_ERR_OK;
+}
+
 net_err_t socket_init(void) {
   plat_memset(socket_tbl, 0, sizeof(socket_tbl));
   return NET_ERR_OK;
