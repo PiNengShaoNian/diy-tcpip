@@ -58,15 +58,26 @@ typedef struct _sock_create_t {
   int protocol;
 } sock_create_t;
 
+typedef struct _sock_data_t {
+  uint8_t *buf;
+  size_t len;
+  int flags;
+  struct x_sockaddr *addr;
+  x_socklen_t addr_len;
+  size_t comp_len;
+} sock_data_t;
+
 typedef struct _sock_req_t {
   int sockfd;
   union {
     sock_create_t create;
+    sock_data_t data;
   };
 } sock_req_t;
 
 net_err_t socket_init(void);
 net_err_t sock_create_req_in(struct _func_msg_t *msg);
+net_err_t sock_send_req_in(struct _func_msg_t *msg);
 
 net_err_t sock_init(sock_t *sock, int family, int protocol,
                     const sock_ops_t *ops);

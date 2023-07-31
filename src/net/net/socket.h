@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "ipv4.h"
+#include "sock.h"
 
 #undef INADDR_ANY
 #define INADDR_ANY 0x00000000
@@ -47,5 +48,7 @@ struct x_sockaddr_in {
 };
 
 int x_socket(int family, int type, int protocol);
+ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
+                 const struct x_sockaddr* dest, x_socklen_t dlen);
 
 #endif

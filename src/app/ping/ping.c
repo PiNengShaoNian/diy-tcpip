@@ -33,7 +33,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
   WSADATA wsdata;
   WSAStartup(MAKEWORD(2, 2), &wsdata);
 
-  SOCKET s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+  int s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
   if (s < 0) {
     plat_printf("ping: open socket error\n");
     return;
@@ -47,12 +47,14 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
   addr.sin_addr.s_addr = inet_addr(dest);
   addr.sin_port = 0;
 
+#if 0
   int err = connect(s, (const struct sockaddr *)&addr, sizeof(addr));
   if (err != 0) {
     printf("connect failed.\n");
     closesocket(s);
     return;
   }
+#endif
 
   int fill_size = size > PING_BUFFER_SIZE ? PING_BUFFER_SIZE : size;
   for (int i = 0; i < fill_size; i++) {
@@ -68,11 +70,11 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
     ping->req.echo_hdr.seq = seq;
     ping->req.echo_hdr.checksum = x_checksum_16(&ping->req, total_size);
 
-#if 0
+#if 1
     int size = sendto(s, (const char *)&ping->req, total_size, 0,
                       (const struct sockaddr *)&addr, sizeof(addr));
 #endif
-    int size = send(s, (const char *)&ping->req, total_size, 0);
+    // int size = send(s, (const char *)&ping->req, total_size, 0);
 
     if (size < 0) {
       plat_printf("send ping request failed.\n");
