@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "exmsg.h"
 #include "raw.h"
+#include "socket.h"
 #include "sys.h"
 
 #define SOCKET_MAX_NR (RAW_MAX_NR)
@@ -59,14 +60,43 @@ net_err_t sock_init(sock_t *sock, int family, int protocol,
 }
 
 net_err_t sock_create_req_in(func_msg_t *msg) {
-  sock_req_t *req = (sock_req_t *)msg->param;
+  static const struct sock_info_t {
+    int protocol;
+    sock_t *(*create)(int family, int protocol);
+  } sock_info_tbl[] = {
+      [SOCK_RAW] = {.protocol = IPPROTO_ICMP, .create = raw_create},
+  };
 
+  sock_req_t *req = (sock_req_t *)msg->param;
+  sock_create_t *param = &req->create;
   x_socket_t *s = socket_alloc();
   if (!s) {
     dbg_error(DBG_SOCKET, "no socket");
     return NET_ERR_MEM;
   }
 
+  if (param->type < 0 ||
+      (param->type >= sizeof(sock_info_tbl) / sizeof(sock_info_tbl[0]))) {
+    dbg_error(DBG_SOCKET, "create sock failed.");
+    socket_free(s);
+    return NET_ERR_PARAM;
+  }
+
+  const struct sock_info_t *info = sock_info_tbl + param->type;
+
+  if (param->protocol == 0) {
+    param->protocol = info->protocol;
+  }
+
+  sock_t *sock = info->create(param->family, param->protocol);
+
+  if (!sock) {
+    dbg_error(DBG_SOCKET, "create sock failed.");
+    socket_free(s);
+    return NET_ERR_MEM;
+  }
+
+  s->sock = sock;
   req->sockfd = get_index(s);
 
   return NET_ERR_OK;

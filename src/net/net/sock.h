@@ -48,6 +48,8 @@ typedef struct _x_socket_t {
     SOCKET_STATE_FREE,
     SOCKET_STATE_USED,
   } state;
+
+  sock_t *sock;
 } x_socket_t;
 
 typedef struct _sock_create_t {

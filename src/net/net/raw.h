@@ -8,5 +8,6 @@ typedef struct _raw_t {
 } raw_t;
 
 net_err_t raw_init(void);
+sock_t *raw_create(int family, int protocol);
 
 #endif
