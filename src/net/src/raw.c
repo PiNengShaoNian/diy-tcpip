@@ -11,6 +11,24 @@ static raw_t raw_tbl[RAW_MAX_NR];
 static mblock_t raw_mblock;
 static nlist_t raw_list;
 
+#if DBG_DISP_ENABLED(DBG_RAW)
+static void display_raw_list(void) {
+  plat_printf("---------- raw list ---------\n");
+
+  nlist_node_t *node;
+  int idx = 0;
+  nlist_for_each(node, &raw_list) {
+    raw_t *raw = (raw_t *)nlist_entry(node, sock_t, node);
+    plat_printf("[%d]:\n", idx++);
+    dbg_dump_ip(DBG_RAW, "    local: ", &raw->base.local_ip);
+    dbg_dump_ip(DBG_RAW, "    remote: ", &raw->base.remote_ip);
+    plat_printf("\n");
+  }
+}
+#else
+#define display_raw_list()
+#endif
+
 net_err_t raw_init(void) {
   dbg_info(DBG_RAW, "raw init");
 
@@ -94,7 +112,24 @@ net_err_t raw_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
   return NET_ERR_OK;
 }
 
-net_err_t raw_close(sock_t *sock) { return NET_ERR_OK; }
+net_err_t raw_close(sock_t *sock) {
+  raw_t *raw = (raw_t *)sock;
+
+  nlist_node_t *node;
+
+  nlist_remove(&raw_list, &sock->node);
+
+  while ((node = nlist_remove_first(&raw->recv_list))) {
+    pktbuf_t *buf = nlist_entry(node, pktbuf_t, node);
+    pktbuf_free(buf);
+  }
+
+  sock_uninit(sock);
+
+  mblock_free(&raw_mblock, sock);
+  display_raw_list();
+  return NET_ERR_OK;
+}
 
 sock_t *raw_create(int family, int protocol) {
   static const sock_ops_t raw_ops = {
@@ -125,6 +160,7 @@ sock_t *raw_create(int family, int protocol) {
   }
 
   nlist_insert_last(&raw_list, &raw->base.node);
+  display_raw_list();
   return (sock_t *)raw;
 create_failed:
   sock_uninit(&raw->base);
