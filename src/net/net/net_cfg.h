@@ -49,5 +49,6 @@
 #define IP_FRAG_TMO 10
 
 #define RAW_MAX_NR 10
+#define RAW_MAX_RECV 50
 
 #endif

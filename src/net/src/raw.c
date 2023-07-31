@@ -3,7 +3,8 @@
 #include "dbg.h"
 #include "ipv4.h"
 #include "mblock.h"
-#include "nlist.h"
+#include "net_cfg.h"
+#include "sock.h"
 #include "socket.h"
 
 static raw_t raw_tbl[RAW_MAX_NR];
@@ -60,12 +61,37 @@ fail:
   return err;
 }
 
-net_err_t raw_recvfrom(struct _sock_t *sock, const void *buf, size_t len,
-                       int flags, const struct x_sockaddr *src,
-                       x_socklen_t *src_len, ssize_t *result_len) {
-  *result_len = 0;
+net_err_t raw_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
+                       const struct x_sockaddr *src, x_socklen_t *src_len,
+                       ssize_t *result_len) {
+  raw_t *raw = (raw_t *)sock;
+  nlist_node_t *first = nlist_remove_first(&raw->recv_list);
 
-  return NET_ERR_NEED_WAIT;
+  if (!first) {
+    *result_len = 0;
+    return NET_ERR_NEED_WAIT;
+  }
+
+  pktbuf_t *pktbuf = nlist_entry(first, pktbuf_t, node);
+  ipv4_hdr_t *iphdr = (ipv4_hdr_t *)pktbuf_data(pktbuf);
+  struct x_sockaddr_in *addr = (struct x_sockaddr_in *)src;
+  plat_memset(addr, 0, sizeof(struct x_sockaddr_in));
+  addr->sin_family = AF_INET;
+  addr->sin_port = 0;
+  plat_memcpy(&addr->sin_addr, iphdr->src_ip, IPV4_ADDR_SIZE);
+
+  int size = (pktbuf->total_size > (int)len) ? (int)len : pktbuf->total_size;
+  pktbuf_reset_acc(pktbuf);
+  net_err_t err = pktbuf_read(pktbuf, buf, size);
+  if (err < 0) {
+    pktbuf_free(pktbuf);
+    dbg_error(DBG_RAW, "pktbuf read error");
+    return err;
+  }
+
+  pktbuf_free(pktbuf);
+  *result_len = size;
+  return NET_ERR_OK;
 }
 
 sock_t *raw_create(int family, int protocol) {
@@ -86,6 +112,8 @@ sock_t *raw_create(int family, int protocol) {
     dbg_error(DBG_RAW, "create raw sock failed.");
     return (sock_t *)0;
   }
+
+  nlist_init(&raw->recv_list);
 
   raw->base.rcv_wait = &raw->recv_wait;
   if (sock_wait_init(raw->base.rcv_wait) < 0) {
@@ -137,6 +165,14 @@ net_err_t raw_in(pktbuf_t *pktbuf) {
   if (!raw) {
     dbg_warning(DBG_RAW, "no raw for this packet");
     return NET_ERR_UNREACH;
+  }
+
+  if (nlist_count(&raw->recv_list) < RAW_MAX_RECV) {
+    nlist_insert_last(&raw->recv_list, &pktbuf->node);
+
+    sock_wakeup((sock_t *)raw, SOCK_WAIT_READ, NET_ERR_OK);
+  } else {
+    pktbuf_free(pktbuf);
   }
 
   return NET_ERR_OK;

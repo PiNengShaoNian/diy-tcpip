@@ -42,7 +42,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
 // int tmo = 3000;
 #if 1
   struct timeval tmo;
-  tmo.tv_sec = 3;
+  tmo.tv_sec = 0;
   tmo.tv_usec = 0;
 #endif
   setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tmo, sizeof(tmo));

@@ -29,15 +29,16 @@ void sock_wait_destroy(sock_wait_t *wait);
 void sock_wait_add(sock_wait_t *wait, int tmo, struct _sock_req_t *req);
 net_err_t sock_wait_enter(sock_wait_t *wait, int tmo);
 void sock_wait_leave(sock_wait_t *wait, net_err_t err);
+void sock_wakeup(struct _sock_t *sock, int type, int err);
 
 typedef struct _sock_ops_t {
   net_err_t (*close)(struct _sock_t *sock);
   net_err_t (*sendto)(struct _sock_t *sock, const void *buf, size_t len,
                       int flags, const struct x_sockaddr *dest,
                       x_socklen_t dest_len, ssize_t *result_len);
-  net_err_t (*recvfrom)(struct _sock_t *sock, const void *buf, size_t len,
-                        int flags, const struct x_sockaddr *src,
-                        x_socklen_t *src_len, ssize_t *result_len);
+  net_err_t (*recvfrom)(struct _sock_t *sock, void *buf, size_t len, int flags,
+                        const struct x_sockaddr *src, x_socklen_t *src_len,
+                        ssize_t *result_len);
   net_err_t (*setopt)(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
   void (*destroy)(struct _sock_t *s);

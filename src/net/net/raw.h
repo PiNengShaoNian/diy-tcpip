@@ -2,11 +2,15 @@
 #define RAW_H
 
 #include "net_err.h"
+#include "nlist.h"
 #include "pktbuf.h"
 #include "sock.h"
 
 typedef struct _raw_t {
   sock_t base;
+
+  nlist_t recv_list;
+
   sock_wait_t recv_wait;
 } raw_t;
 
