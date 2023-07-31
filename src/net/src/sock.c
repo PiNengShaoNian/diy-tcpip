@@ -77,6 +77,20 @@ void sock_wait_leave(sock_wait_t *wait, net_err_t err) {
   }
 }
 
+void sock_wakeup(sock_t *sock, int type, int err) {
+  if (type & SOCK_WAIT_CONN) {
+    sock_wait_leave(sock->conn_wait, err);
+  }
+
+  if (type & SOCK_WAIT_WRITE) {
+    sock_wait_leave(sock->snd_wait, err);
+  }
+
+  if (type & SOCK_WAIT_READ) {
+    sock_wait_leave(sock->rcv_wait, err);
+  }
+}
+
 net_err_t socket_init(void) {
   plat_memset(socket_tbl, 0, sizeof(socket_tbl));
   return NET_ERR_OK;
@@ -102,6 +116,20 @@ net_err_t sock_init(sock_t *sock, int family, int protocol,
   sock->snd_wait = (sock_wait_t *)0;
 
   return NET_ERR_OK;
+}
+
+void sock_uninit(sock_t *sock) {
+  if (sock->rcv_wait) {
+    sock_wait_destroy(sock->rcv_wait);
+  }
+
+  if (sock->conn_wait) {
+    sock_wait_destroy(sock->conn_wait);
+  }
+
+  if (sock->snd_wait) {
+    sock_wait_destroy(sock->snd_wait);
+  }
 }
 
 net_err_t sock_create_req_in(func_msg_t *msg) {

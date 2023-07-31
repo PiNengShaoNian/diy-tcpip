@@ -106,5 +106,6 @@ net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
 
 net_err_t sock_init(sock_t *sock, int family, int protocol,
                     const sock_ops_t *ops);
+void sock_uninit(sock_t *sock);
 
 #endif

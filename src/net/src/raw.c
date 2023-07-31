@@ -86,8 +86,15 @@ sock_t *raw_create(int family, int protocol) {
     return (sock_t *)0;
   }
 
-  ((sock_t *)raw)->rcv_wait = &raw->recv_wait;
+  raw->base.rcv_wait = &raw->recv_wait;
+  if (sock_wait_init(raw->base.rcv_wait) < 0) {
+    dbg_error(DBG_RAW, "create rcv wait failed");
+    goto create_failed;
+  }
 
   nlist_insert_last(&raw_list, &raw->base.node);
   return (sock_t *)raw;
+create_failed:
+  sock_uninit(&raw->base);
+  return (sock_t *)0;
 }
