@@ -2,9 +2,10 @@
 
 #include "dbg.h"
 #include "exmsg.h"
+#include "raw.h"
 #include "sys.h"
 
-#define SOCKET_MAX_NR 10
+#define SOCKET_MAX_NR (RAW_MAX_NR)
 
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
 
