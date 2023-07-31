@@ -58,6 +58,10 @@ typedef struct _sock_t {
   int rcv_tmo;
   int snd_tmo;
 
+  sock_wait_t *rcv_wait;
+  sock_wait_t *snd_wait;
+  sock_wait_t *conn_wait;
+
   nlist_node_t node;
 } sock_t;
 

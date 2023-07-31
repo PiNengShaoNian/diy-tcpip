@@ -2,6 +2,7 @@
 #define NET_ERR_H
 
 typedef enum _net_err_t {
+  NET_ERR_NEED_WAIT = 1,
   NET_ERR_OK = 0,
   NET_ERR_SYS = -1,
   NET_ERR_MEM = -2,

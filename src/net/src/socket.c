@@ -7,6 +7,8 @@
 int x_socket(int family, int type, int protocol) {
   sock_req_t req;
 
+  req.wait = (sock_wait_t*)0;
+  req.wait_tmo = 0;
   req.sockfd = -1;
   req.create.family = family;
   req.create.protocol = protocol;
@@ -39,6 +41,8 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
   uint8_t* start = (uint8_t*)buf;
   while (len > 0) {
     sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.wait_tmo = 0;
     req.sockfd = s;
     req.data.buf = start;
     req.data.len = len;
@@ -51,6 +55,11 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
     if (err < 0) {
       dbg_error(DBG_SOCKET, "create socket failed.");
       return -1;
+    }
+
+    if (req.wait && (err = sock_wait_enter(req.wait, req.wait_tmo)) < 0) {
+      dbg_error(DBG_SOCKET, "send failed.");
+      return err;
     }
 
     len -= req.data.comp_len;
@@ -68,23 +77,34 @@ ssize_t x_recvfrom(int s, const void* buf, size_t len, int flags,
     return -1;
   }
 
-  sock_req_t req;
-  req.sockfd = s;
-  req.data.buf = (uint8_t*)buf;
-  req.data.len = len;
-  req.data.flags = 0;
-  req.data.addr = (struct x_sockaddr*)src;
-  req.data.addr_len = slen;
-  req.data.comp_len = 0;
+  while (1) {
+    sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.wait_tmo = 0;
+    req.sockfd = s;
+    req.data.buf = (uint8_t*)buf;
+    req.data.len = len;
+    req.data.flags = 0;
+    req.data.addr = (struct x_sockaddr*)src;
+    req.data.addr_len = slen;
+    req.data.comp_len = 0;
 
-  net_err_t err = exmsg_func_exec(sock_recvfrom_req_in, &req);
-  if (err < 0) {
-    dbg_error(DBG_SOCKET, "recv socket failed.");
-    return -1;
-  }
+    net_err_t err = exmsg_func_exec(sock_recvfrom_req_in, &req);
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "recv socket failed.");
+      return -1;
+    }
 
-  if (req.data.comp_len) {
-    return (ssize_t)req.data.comp_len;
+    if (req.data.comp_len) {
+      return (ssize_t)req.data.comp_len;
+    }
+
+    err = sock_wait_enter(req.wait, req.wait_tmo);
+
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "recv failed.");
+      return -1;
+    }
   }
 
   return -1;

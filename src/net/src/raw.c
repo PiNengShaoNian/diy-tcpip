@@ -63,7 +63,9 @@ fail:
 net_err_t raw_recvfrom(struct _sock_t *sock, const void *buf, size_t len,
                        int flags, const struct x_sockaddr *src,
                        x_socklen_t *src_len, ssize_t *result_len) {
-  return NET_ERR_OK;
+  *result_len = 0;
+
+  return NET_ERR_NEED_WAIT;
 }
 
 sock_t *raw_create(int family, int protocol) {
@@ -83,6 +85,8 @@ sock_t *raw_create(int family, int protocol) {
     dbg_error(DBG_RAW, "create raw sock failed.");
     return (sock_t *)0;
   }
+
+  ((sock_t *)raw)->rcv_wait = &raw->recv_wait;
 
   nlist_insert_last(&raw_list, &raw->base.node);
   return (sock_t *)raw;

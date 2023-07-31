@@ -96,6 +96,11 @@ net_err_t sock_init(sock_t *sock, int family, int protocol,
   sock->rcv_tmo = 0;
   sock->snd_tmo = 0;
   nlist_node_init(&sock->node);
+
+  sock->rcv_wait = (sock_wait_t *)0;
+  sock->conn_wait = (sock_wait_t *)0;
+  sock->snd_wait = (sock_wait_t *)0;
+
   return NET_ERR_OK;
 }
 
@@ -163,6 +168,12 @@ net_err_t sock_send_req_in(struct _func_msg_t *msg) {
       sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr,
                         *data->addr_len, (ssize_t *)&data->comp_len);
 
+  if (err == NET_ERR_NEED_WAIT) {
+    if (sock->snd_wait) {
+      sock_wait_add(sock->snd_wait, sock->snd_tmo, req);
+    }
+  }
+
   return err;
 }
 
@@ -186,6 +197,12 @@ net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
   net_err_t err =
       sock->ops->recvfrom(sock, data->buf, data->len, data->flags, data->addr,
                           data->addr_len, (ssize_t *)&data->comp_len);
+
+  if (err == NET_ERR_NEED_WAIT) {
+    if (sock->rcv_wait) {
+      sock_wait_add(sock->rcv_wait, sock->rcv_tmo, req);
+    }
+  }
 
   return err;
 }
