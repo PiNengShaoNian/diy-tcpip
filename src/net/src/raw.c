@@ -60,9 +60,16 @@ fail:
   return err;
 }
 
+net_err_t raw_recvfrom(struct _sock_t *sock, const void *buf, size_t len,
+                       int flags, const struct x_sockaddr *src,
+                       x_socklen_t *src_len, ssize_t *result_len) {
+  return NET_ERR_OK;
+}
+
 sock_t *raw_create(int family, int protocol) {
   static const sock_ops_t raw_ops = {
       .sendto = raw_sendto,
+      .recvfrom = raw_recvfrom,
   };
   raw_t *raw = mblock_alloc(&raw_mblock, -1);
 

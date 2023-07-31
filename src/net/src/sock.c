@@ -121,7 +121,31 @@ net_err_t sock_send_req_in(struct _func_msg_t *msg) {
 
   net_err_t err =
       sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr,
-                        data->addr_len, (ssize_t *)&data->comp_len);
+                        *data->addr_len, (ssize_t *)&data->comp_len);
+
+  return err;
+}
+
+net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+  sock_data_t *data = &req->data;
+
+  if (!sock->ops->recvfrom) {
+    dbg_error(DBG_SOCKET, "function not impl");
+    return NET_ERR_NOT_SUPPORT;
+  }
+
+  net_err_t err =
+      sock->ops->recvfrom(sock, data->buf, data->len, data->flags, data->addr,
+                          data->addr_len, (ssize_t *)&data->comp_len);
 
   return err;
 }

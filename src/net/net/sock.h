@@ -19,7 +19,7 @@ typedef struct _sock_ops_t {
                       x_socklen_t dest_len, ssize_t *result_len);
   net_err_t (*recvfrom)(struct _sock_t *sock, const void *buf, size_t len,
                         int flags, const struct x_sockaddr *src,
-                        x_socklen_t src_len, ssize_t *result_len);
+                        x_socklen_t *src_len, ssize_t *result_len);
   net_err_t (*setopt)(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
   void (*destroy)(struct _sock_t *s);
@@ -63,7 +63,7 @@ typedef struct _sock_data_t {
   size_t len;
   int flags;
   struct x_sockaddr *addr;
-  x_socklen_t addr_len;
+  x_socklen_t *addr_len;
   size_t comp_len;
 } sock_data_t;
 
@@ -78,6 +78,7 @@ typedef struct _sock_req_t {
 net_err_t socket_init(void);
 net_err_t sock_create_req_in(struct _func_msg_t *msg);
 net_err_t sock_send_req_in(struct _func_msg_t *msg);
+net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
 
 net_err_t sock_init(sock_t *sock, int family, int protocol,
                     const sock_ops_t *ops);

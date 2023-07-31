@@ -87,12 +87,12 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
 
     do {
       struct sockaddr_in from_addr;
-      int addr_len = sizeof(from_addr);
-#if 0
+      socklen_t addr_len = sizeof(from_addr);
+#if 1
       size = recvfrom(s, (char *)&ping->reply, sizeof(ping->reply), 0,
                       (struct sockaddr *)&from_addr, &addr_len);
 #endif
-      size = recv(s, (char *)&ping->reply, sizeof(ping->reply), 0);
+      // size = recv(s, (char *)&ping->reply, sizeof(ping->reply), 0);
 
       if (size < 0) {
         plat_printf("ping recv tmo\n");
