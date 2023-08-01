@@ -14,6 +14,7 @@
 #include "sock.h"
 #include "timer.h"
 #include "tools.h"
+#include "udp.h"
 
 net_err_t net_init(void) {
   dbg_info(DBG_INIT, "init net");
@@ -35,6 +36,7 @@ net_err_t net_init(void) {
 
   socket_init();
   raw_init();
+  udp_init();
 
   loop_init();
 
