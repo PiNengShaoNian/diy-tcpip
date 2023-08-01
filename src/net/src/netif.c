@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "ether.h"
 #include "exmsg.h"
+#include "ipv4.h"
 #include "mblock.h"
 #include "pktbuf.h"
 #include "protocol.h"
@@ -203,6 +204,12 @@ net_err_t netif_set_active(netif_t *netif) {
       return err;
     }
   }
+
+  ipaddr_t ip = ipaddr_get_net(&netif->ipaddr, &netif->netmask);
+  rt_add(&ip, &netif->netmask, ipaddr_get_any(), netif);
+
+  ipaddr_from_buf(&ip, "255.255.255.255");
+  rt_add(&netif->ipaddr, &ip, ipaddr_get_any(), netif);
 
   netif->state = NETIF_ACTIVE;
   display_netif_list();

@@ -25,6 +25,22 @@ void rt_init(void) {
               NLOCKER_NONE);
 }
 
+void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif) {
+  rentry_t *entry = (rentry_t *)mblock_alloc(&rt_mblock, -1);
+
+  if (!entry) {
+    dbg_warning(DBG_IP, "alloc rt entry failed.");
+    return;
+  }
+
+  ipaddr_copy(&entry->net, net);
+  ipaddr_copy(&entry->mask, mask);
+  ipaddr_copy(&entry->next_hop, next_hop);
+  entry->netif = netif;
+
+  nlist_insert_last(&rt_list, &entry->node);
+}
+
 static int get_data_size(ipv4_pkt_t *pkt) {
   return pkt->hdr.total_len - ipv4_hdr_size(pkt);
 }

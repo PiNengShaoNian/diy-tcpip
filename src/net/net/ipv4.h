@@ -77,13 +77,14 @@ typedef struct _ip_frag_t {
 typedef struct _rentry_t {
   ipaddr_t net;
   ipaddr_t mask;
-  ipaddr_t net_hop;
+  ipaddr_t next_hop;
   netif_t *netif;
 
   nlist_node_t node;
 } rentry_t;
 
 void rt_init(void);
+void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif);
 
 net_err_t ipv4_init(void);
 
