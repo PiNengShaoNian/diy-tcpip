@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
   ping_t p;
   char cmd[32], param[32];
 
-  ping_run(&p, friend0_ip, 4, 1000, 1000);
+  ping_run(&p, "8.8.8.8", 4, 1000, 1000);
 
   while (1) {
     printf(">>");

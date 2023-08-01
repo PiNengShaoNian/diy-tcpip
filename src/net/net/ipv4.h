@@ -74,6 +74,17 @@ typedef struct _ip_frag_t {
   nlist_node_t node;
 } ip_frag_t;
 
+typedef struct _rentry_t {
+  ipaddr_t net;
+  ipaddr_t mask;
+  ipaddr_t net_hop;
+  netif_t *netif;
+
+  nlist_node_t node;
+} rentry_t;
+
+void rt_init(void);
+
 net_err_t ipv4_init(void);
 
 net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf);
