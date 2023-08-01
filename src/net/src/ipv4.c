@@ -41,6 +41,19 @@ void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif) {
   nlist_insert_last(&rt_list, &entry->node);
 }
 
+void rt_remove(ipaddr_t *net, ipaddr_t *mask) {
+  nlist_node_t *node;
+  nlist_for_each(node, &rt_list) {
+    rentry_t *entry = nlist_entry(node, rentry_t, node);
+    if (ipaddr_is_equal(&entry->net, net) &&
+        ipaddr_is_equal(&entry->mask, mask)) {
+      nlist_remove(&rt_list, node);
+      mblock_free(&rt_mblock, entry);
+      return;
+    }
+  }
+}
+
 static int get_data_size(ipv4_pkt_t *pkt) {
   return pkt->hdr.total_len - ipv4_hdr_size(pkt);
 }

@@ -85,6 +85,7 @@ typedef struct _rentry_t {
 
 void rt_init(void);
 void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif);
+void rt_remove(ipaddr_t *net, ipaddr_t *mask);
 
 net_err_t ipv4_init(void);
 
