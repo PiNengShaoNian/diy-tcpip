@@ -54,6 +54,7 @@ void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif) {
   ipaddr_copy(&entry->mask, mask);
   ipaddr_copy(&entry->next_hop, next_hop);
   entry->netif = netif;
+  entry->mask_1_cnt = ipaddr_1_cnt(mask);
 
   nlist_insert_last(&rt_list, &entry->node);
 
@@ -72,6 +73,25 @@ void rt_remove(ipaddr_t *net, ipaddr_t *mask) {
       return;
     }
   }
+}
+
+rentry_t *rt_find(ipaddr_t *ip) {
+  rentry_t *e = (rentry_t *)0;
+  nlist_node_t *node;
+
+  nlist_for_each(node, &rt_list) {
+    rentry_t *entry = nlist_entry(node, rentry_t, node);
+    ipaddr_t net = ipaddr_get_net(ip, &entry->mask);
+    if (!ipaddr_is_equal(&net, &entry->net)) {
+      continue;
+    }
+
+    if (!e || (e->mask_1_cnt < entry->mask_1_cnt)) {
+      e = entry;
+    }
+  }
+
+  return e;
 }
 
 static int get_data_size(ipv4_pkt_t *pkt) {

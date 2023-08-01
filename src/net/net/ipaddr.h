@@ -31,5 +31,6 @@ int ipaddr_is_match(const ipaddr_t* dest_ip, const ipaddr_t* src_ip,
 int ipaddr_is_any(ipaddr_t* ip);
 ipaddr_t ipaddr_get_host(const ipaddr_t* ipaddr, const ipaddr_t* netmask);
 ipaddr_t ipaddr_get_net(const ipaddr_t* ipaddr, const ipaddr_t* netmask);
+int ipaddr_1_cnt(ipaddr_t* ip);
 
 #endif

@@ -77,6 +77,7 @@ typedef struct _ip_frag_t {
 typedef struct _rentry_t {
   ipaddr_t net;
   ipaddr_t mask;
+  int mask_1_cnt;
   ipaddr_t next_hop;
   netif_t *netif;
 
@@ -86,6 +87,7 @@ typedef struct _rentry_t {
 void rt_init(void);
 void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif);
 void rt_remove(ipaddr_t *net, ipaddr_t *mask);
+rentry_t *rt_find(ipaddr_t *ip);
 
 net_err_t ipv4_init(void);
 
