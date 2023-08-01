@@ -505,7 +505,7 @@ net_err_t ipv4_in(netif_t *netif, pktbuf_t *buf) {
 }
 
 net_err_t ip_frag_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
-                      pktbuf_t *buf, netif_t *netif) {
+                      pktbuf_t *buf, ipaddr_t *next_hop, netif_t *netif) {
   pktbuf_reset_acc(buf);
 
   int offset = 0;
@@ -556,7 +556,7 @@ net_err_t ip_frag_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
 
     display_ip_pkt(pkt);
 
-    err = netif_out(netif, dest, dest_buf);
+    err = netif_out(netif, next_hop, dest_buf);
     if (err < 0) {
       dbg_warning(DBG_IP, "send ip packet");
       pktbuf_free(dest_buf);
@@ -576,9 +576,22 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
                    pktbuf_t *buf) {
   dbg_info(DBG_IP, "send an ip pkt");
 
-  netif_t *netif = netif_get_default();
+  rentry_t *rt = rt_find(dest);
+  if (!rt) {
+    dbg_error(DBG_IP, "send failed. no route");
+    return NET_ERR_UNREACH;
+  }
+
+  ipaddr_t next_hop;
+  if (ipaddr_is_any(&rt->next_hop)) {
+    ipaddr_copy(&next_hop, dest);
+  } else {
+    ipaddr_copy(&next_hop, &rt->next_hop);
+  }
+
+  netif_t *netif = rt->netif;
   if (netif->mtu && ((buf->total_size + sizeof(ipv4_hdr_t)) > netif->mtu)) {
-    net_err_t err = ip_frag_out(protocol, dest, src, buf, netif);
+    net_err_t err = ip_frag_out(protocol, dest, src, buf, &next_hop, netif);
     if (err < 0) {
       dbg_warning(DBG_IP, "send ip frag failed.");
       return err;
@@ -604,7 +617,11 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
   pkt->hdr.ttl = NET_IP_DEFAULT_TTL;
   pkt->hdr.protocol = protocol;
   pkt->hdr.hdr_checksum = 0;
-  ipaddr_to_buf(src, pkt->hdr.src_ip);
+  if (!src || ipaddr_is_any(src)) {
+    ipaddr_to_buf(&netif->ipaddr, pkt->hdr.src_ip);
+  } else {
+    ipaddr_to_buf(src, pkt->hdr.src_ip);
+  }
   ipaddr_to_buf(dest, pkt->hdr.dest_ip);
 
   iphdr_htons(pkt);
@@ -613,7 +630,7 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t *dest, ipaddr_t *src,
 
   display_ip_pkt(pkt);
 
-  err = netif_out(netif_get_default(), dest, buf);
+  err = netif_out(netif, &next_hop, buf);
 
   if (err < 0) {
     dbg_warning(DBG_IP, "send ip packet failed.");

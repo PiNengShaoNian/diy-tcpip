@@ -18,7 +18,7 @@
 
 // 系统硬件配置
 // 不同网卡配置，共2块网卡
-#if 1
+#if 0
 static const char netdev0_ip[] = "192.168.74.2";
 static const char netdev0_gw[] = "192.168.74.1";
 static const char friend0_ip[] = "192.168.74.3";
@@ -26,11 +26,12 @@ static const char netdev0_phy_ip[] = "192.168.74.1";    // 用于收发包的真
 static const char netdev0_mask[] = "255.255.255.0";
 static const uint8_t netdev0_hwaddr[] = { 0x00, 0x50, 0x56, 0xc0, 0x00, 0x11 };
 #else
-static const char netdev0_ip[] = "192.168.74.2";
-static const char netdev0_gw[] = "192.168.74.3";
-static const char friend0_ip[] = "192.168.74.3";
+static const char netdev0_ip[] = "10.0.3.16";
+static const char netdev0_gw[] = "10.0.3.2";
+static const char friend0_ip[] = "10.0.3.15";
 static const char netdev0_phy_ip[] = "192.168.74.1";    // 用于收发包的真实网卡ip地址
 static const char netdev0_mask[] = "255.255.255.0";
+static const uint8_t netdev0_hwaddr[] = { 0x00, 0x50, 0x56, 0xc0, 0x00, 0x11 };
 #endif
 
 static const char netdev1_ip[] = "10.0.2.200";
