@@ -28,7 +28,6 @@ net_err_t net_init(void) {
 
   net_timer_init();
 
-  loop_init();
   ether_init();
   arp_init();
   ipv4_init();
@@ -36,6 +35,8 @@ net_err_t net_init(void) {
 
   socket_init();
   raw_init();
+
+  loop_init();
 
   return NET_ERR_OK;
 }

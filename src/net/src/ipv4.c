@@ -19,6 +19,23 @@ static nlist_t rt_list;
 static rentry_t rt_table[IP_RTTABLE_SIZE];
 static mblock_t rt_mblock;
 
+#if DBG_DISP_ENABLED(DBG_IP)
+void rt_nlist_display(void) {
+  plat_printf("-------- rt table --------\n");
+
+  nlist_node_t *node;
+  nlist_for_each(node, &rt_list) {
+    rentry_t *entry = nlist_entry(node, rentry_t, node);
+    dbg_dump_ip(DBG_IP, "    net: ", &entry->net);
+    dbg_dump_ip(DBG_IP, "    mask: ", &entry->mask);
+    dbg_dump_ip(DBG_IP, "    next_hop: ", &entry->next_hop);
+    plat_printf("    netif: %s\n", entry->netif->name);
+  }
+}
+#else
+#define rt_nlist_display()
+#endif
+
 void rt_init(void) {
   nlist_init(&rt_list);
   mblock_init(&rt_mblock, rt_table, sizeof(rentry_t), IP_RTTABLE_SIZE,
@@ -39,6 +56,8 @@ void rt_add(ipaddr_t *net, ipaddr_t *mask, ipaddr_t *next_hop, netif_t *netif) {
   entry->netif = netif;
 
   nlist_insert_last(&rt_list, &entry->node);
+
+  rt_nlist_display();
 }
 
 void rt_remove(ipaddr_t *net, ipaddr_t *mask) {
@@ -49,6 +68,7 @@ void rt_remove(ipaddr_t *net, ipaddr_t *mask) {
         ipaddr_is_equal(&entry->mask, mask)) {
       nlist_remove(&rt_list, node);
       mblock_free(&rt_mblock, entry);
+      rt_nlist_display();
       return;
     }
   }

@@ -208,7 +208,7 @@ net_err_t netif_set_active(netif_t *netif) {
   ipaddr_t ip = ipaddr_get_net(&netif->ipaddr, &netif->netmask);
   rt_add(&ip, &netif->netmask, ipaddr_get_any(), netif);
 
-  ipaddr_from_buf(&ip, "255.255.255.255");
+  ipaddr_from_str(&ip, "255.255.255.255");
   rt_add(&netif->ipaddr, &ip, ipaddr_get_any(), netif);
 
   netif->state = NETIF_ACTIVE;
@@ -238,6 +238,7 @@ net_err_t netif_set_deactivate(netif_t *netif) {
 
   if (netif_default == netif) {
     netif_default = (netif_t *)0;
+    rt_remove(ipaddr_get_any(), ipaddr_get_any());
   }
 
   netif->state = NETIF_OPENED;
@@ -262,7 +263,16 @@ net_err_t netif_close(netif_t *netif) {
   return NET_ERR_OK;
 }
 
-void netif_set_default(netif_t *netif) { netif_default = netif; }
+void netif_set_default(netif_t *netif) {
+  netif_default = netif;
+
+  if (!ipaddr_is_any(&netif->gateway)) {
+    if (netif_default) {
+      rt_remove(ipaddr_get_any(), ipaddr_get_any());
+    }
+    rt_add(ipaddr_get_any(), ipaddr_get_any(), &netif->gateway, netif);
+  }
+}
 
 netif_t *netif_get_default(void) { return netif_default; }
 
