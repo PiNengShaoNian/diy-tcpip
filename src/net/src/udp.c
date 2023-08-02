@@ -89,6 +89,12 @@ static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
     goto fail;
   }
 
+  err = udp_out(&dest_ip, dport, &sock->local_ip, sock->local_port, pktbuf);
+  if (err < 0) {
+    dbg_error(DBG_UDP, "send error");
+    goto fail;
+  }
+
   *result_len = (ssize_t)len;
   return NET_ERR_OK;
 
@@ -126,4 +132,28 @@ sock_t *udp_create(int family, int protocol) {
 create_failed:
   sock_uninit(&udp->base);
   return (sock_t *)0;
+}
+
+net_err_t udp_out(ipaddr_t *dest_ip, uint16_t dest_port, ipaddr_t *src_ip,
+                  uint16_t src_port, pktbuf_t *buf) {
+  net_err_t err = pktbuf_add_header(buf, sizeof(udp_hdr_t), 1);
+  if (err < 0) {
+    dbg_error(DBG_UDP, "add header failed.");
+    return NET_ERR_SIZE;
+  }
+
+  udp_hdr_t *udp_hdr = (udp_hdr_t *)pktbuf_data(buf);
+  udp_hdr->src_port = x_htons(src_port);
+  udp_hdr->dest_port = x_htons(dest_port);
+  udp_hdr->total_len = x_htons(buf->total_size);
+  udp_hdr->checksum = 0;
+
+  ipv4_out(NET_PROTOCOL_UDP, dest_ip, src_ip, buf);
+
+  if (err < 0) {
+    dbg_error(DBG_UDP, "udp out err");
+    return err;
+  }
+
+  return NET_ERR_OK;
 }
