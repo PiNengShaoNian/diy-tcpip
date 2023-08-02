@@ -136,6 +136,15 @@ create_failed:
 
 net_err_t udp_out(ipaddr_t *dest_ip, uint16_t dest_port, ipaddr_t *src_ip,
                   uint16_t src_port, pktbuf_t *buf) {
+  if (ipaddr_is_any(src_ip)) {
+    rentry_t *rt = rt_find(dest_ip);
+    if (rt == (rentry_t *)0) {
+      dbg_error(DBG_UDP, "no route.");
+      return NET_ERR_UNREACH;
+    }
+    src_ip = &rt->netif->ipaddr;
+  }
+
   net_err_t err = pktbuf_add_header(buf, sizeof(udp_hdr_t), 1);
   if (err < 0) {
     dbg_error(DBG_UDP, "add header failed.");
@@ -148,7 +157,9 @@ net_err_t udp_out(ipaddr_t *dest_ip, uint16_t dest_port, ipaddr_t *src_ip,
   udp_hdr->total_len = x_htons(buf->total_size);
   udp_hdr->checksum = 0;
 
-  ipv4_out(NET_PROTOCOL_UDP, dest_ip, src_ip, buf);
+  udp_hdr->checksum = checksum_peso(buf, dest_ip, src_ip, NET_PROTOCOL_UDP);
+
+  err = ipv4_out(NET_PROTOCOL_UDP, dest_ip, src_ip, buf);
 
   if (err < 0) {
     dbg_error(DBG_UDP, "udp out err");

@@ -3,8 +3,10 @@
 
 #include <stdint.h>
 
+#include "ipaddr.h"
 #include "net_cfg.h"
 #include "net_err.h"
+#include "pktbuf.h"
 
 net_err_t tools_init(void);
 
@@ -33,5 +35,7 @@ static inline uint32_t swap_u32(uint32_t v) {
 
 uint16_t checksum_16(uint32_t offset, void *buf, uint16_t len, uint32_t pre_sum,
                      int complement);
+uint16_t checksum_peso(pktbuf_t *buf, const ipaddr_t *dest, const ipaddr_t *src,
+                       uint8_t protocol);
 
 #endif
