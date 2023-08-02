@@ -1,5 +1,6 @@
 #include <WinSock2.h>
 
+#include "net_api.h"
 #include "sys_plat.h"
 #include "tcp_echo_server.h"
 
@@ -10,7 +11,7 @@ void udp_echo_server(void *arg) {
   WSADATA wsdata;
   WSAStartup(MAKEWORD(2, 2), &wsdata);
 
-  SOCKET s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (s < 0) {
     plat_printf("udp echo server: open socket error\n");
     return;
@@ -22,10 +23,11 @@ void udp_echo_server(void *arg) {
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(port);
 
-  if (bind(s, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-    plat_printf("bind error\n");
-    goto end;
-  }
+  //   if (bind(s, (const struct sockaddr *)&server_addr, sizeof(server_addr)) <
+  //   0) {
+  //     plat_printf("bind error\n");
+  //     goto end;
+  //   }
 
   while (1) {
     struct sockaddr_in client_addr;
@@ -50,7 +52,8 @@ void udp_echo_server(void *arg) {
   }
 
 end:
-  closesocket(s);
+  close(s);
+  //   closesocket(s);
 }
 
 void udp_echo_server_start(int port) {
