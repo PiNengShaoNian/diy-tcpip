@@ -2,15 +2,13 @@
 
 #include <WinSock2.h>
 
+#include "net_api.h"
 #include "sys_plat.h"
 
 int udp_echo_client_start(const char *ip, int port) {
   plat_printf("udp echo client, ip: %s, port: %d\n", ip, port);
 
-  WSADATA wsdata;
-  WSAStartup(MAKEWORD(2, 2), &wsdata);
-
-  SOCKET s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  int s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (s < 0) {
     plat_printf("udp echo client: open socket error\n");
     goto end;
@@ -52,13 +50,15 @@ int udp_echo_client_start(const char *ip, int port) {
     plat_printf(">>");
   }
 
-  closesocket(s);
+  //   closesocket(s);
+  close(s);
 
   return 0;
 
 end:
   if (s >= 0) {
-    closesocket(s);
+    // closesocket(s);
+    close(s);
   }
   return -1;
 }
