@@ -6,6 +6,7 @@
 #include "net_cfg.h"
 #include "nlist.h"
 #include "pktbuf.h"
+#include "protocol.h"
 #include "socket.h"
 #include "tools.h"
 
@@ -23,6 +24,35 @@ net_err_t udp_init(void) {
   return NET_ERR_OK;
 }
 
+static int is_port_used(int port) {
+  nlist_node_t *node;
+  nlist_for_each(node, &udp_list) {
+    sock_t *sock = (sock_t *)nlist_entry(node, sock_t, node);
+    if (sock->local_port == port) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+static net_err_t alloc_port(sock_t *sock) {
+  static int search_index = NET_PORT_DYN_START;
+  for (int i = search_index; i < NET_PORT_DYN_END; i++) {
+    int port = search_index++;
+    if (search_index >= NET_PORT_DYN_END) {
+      search_index = NET_PORT_DYN_START;
+    }
+
+    if (!is_port_used(port)) {
+      sock->local_port = port;
+      return NET_ERR_OK;
+    }
+  }
+
+  return NET_ERR_NONE;
+}
+
 static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
                             int flags, const struct x_sockaddr *dest,
                             x_socklen_t dest_len, ssize_t *result_len) {
@@ -37,9 +67,14 @@ static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
     return NET_ERR_PARAM;
   }
 
-  if (sock->remote_port && (sock->remote_port == dport)) {
+  if (sock->remote_port && (sock->remote_port != dport)) {
     dbg_error(DBG_UDP, "dest is incorrect");
     return NET_ERR_PARAM;
+  }
+
+  if (!sock->local_port && (sock->err = alloc_port(sock)) < 0) {
+    dbg_error(DBG_UDP, "no port available");
+    return NET_ERR_NONE;
   }
 
   pktbuf_t *pktbuf = pktbuf_alloc((int)len);
