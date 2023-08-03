@@ -123,6 +123,7 @@ net_err_t sock_create_req_in(struct _func_msg_t *msg);
 net_err_t sock_sendto_req_in(struct _func_msg_t *msg);
 net_err_t sock_send_req_in(struct _func_msg_t *msg);
 net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
+net_err_t sock_recv_req_in(struct _func_msg_t *msg);
 net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
 net_err_t sock_close_req_in(struct _func_msg_t *msg);
 net_err_t sock_conn_req_in(struct _func_msg_t *msg);

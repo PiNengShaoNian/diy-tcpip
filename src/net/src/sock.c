@@ -279,6 +279,8 @@ net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
   return err;
 }
 
+net_err_t sock_recv_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+
 net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen) {
   if (level != SOL_SOCKET) {

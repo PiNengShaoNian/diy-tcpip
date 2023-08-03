@@ -147,6 +147,43 @@ ssize_t x_recvfrom(int s, const void* buf, size_t len, int flags,
   return -1;
 }
 
+ssize_t x_recv(int s, const void* buf, size_t len, int flags) {
+  if (!buf || !len) {
+    dbg_error(DBG_SOCKET, "param error");
+    return -1;
+  }
+
+  while (1) {
+    sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.wait_tmo = 0;
+    req.sockfd = s;
+    req.data.buf = (uint8_t*)buf;
+    req.data.len = len;
+    req.data.flags = 0;
+    req.data.comp_len = 0;
+
+    net_err_t err = exmsg_func_exec(sock_recv_req_in, &req);
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "recv socket failed.");
+      return -1;
+    }
+
+    if (req.data.comp_len) {
+      return (ssize_t)req.data.comp_len;
+    }
+
+    err = sock_wait_enter(req.wait, req.wait_tmo);
+
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "recv failed.");
+      return -1;
+    }
+  }
+
+  return -1;
+}
+
 int x_setsockopt(int s, int level, int optname, const char* optval, int len) {
   if (!optval || !len) {
     dbg_error(DBG_SOCKET, "param error");

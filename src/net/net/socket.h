@@ -72,6 +72,7 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
 ssize_t x_send(int s, const void* buf, size_t len, int flags);
 ssize_t x_recvfrom(int s, const void* buf, size_t len, int flags,
                    const struct x_sockaddr* src, x_socklen_t* slen);
+ssize_t x_recv(int s, const void* buf, size_t len, int flags);
 int x_setsockopt(int s, int level, int optname, const char* optval, int len);
 int x_close(int s);
 int x_connect(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
