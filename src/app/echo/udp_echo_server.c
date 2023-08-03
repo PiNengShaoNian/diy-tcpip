@@ -23,11 +23,10 @@ void udp_echo_server(void *arg) {
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(port);
 
-  //   if (bind(s, (const struct sockaddr *)&server_addr, sizeof(server_addr)) <
-  //   0) {
-  //     plat_printf("bind error\n");
-  //     goto end;
-  //   }
+  if (bind(s, (const struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+    plat_printf("bind error\n");
+    goto end;
+  }
 
   while (1) {
     struct sockaddr_in client_addr;

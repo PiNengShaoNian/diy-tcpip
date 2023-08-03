@@ -45,6 +45,8 @@ typedef struct _sock_ops_t {
                     ssize_t *result_len);
   net_err_t (*connect)(struct _sock_t *s, const struct x_sockaddr *addr,
                        x_socklen_t addr_len);
+  net_err_t (*bind)(struct _sock_t *s, const struct x_sockaddr *addr,
+                    x_socklen_t addr_len);
   net_err_t (*setopt)(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
   void (*destroy)(struct _sock_t *s);
@@ -108,6 +110,11 @@ typedef struct _sock_conn_t {
   x_socklen_t addr_len;
 } sock_conn_t;
 
+typedef struct _sock_bind_t {
+  struct x_sockaddr *addr;
+  x_socklen_t addr_len;
+} sock_bind_t;
+
 typedef struct _sock_req_t {
   sock_wait_t *wait;
   int wait_tmo;
@@ -117,6 +124,7 @@ typedef struct _sock_req_t {
     sock_data_t data;
     sock_opt_t opt;
     sock_conn_t conn;
+    sock_bind_t bind;
   };
 } sock_req_t;
 
@@ -129,6 +137,7 @@ net_err_t sock_recv_req_in(struct _func_msg_t *msg);
 net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
 net_err_t sock_close_req_in(struct _func_msg_t *msg);
 net_err_t sock_conn_req_in(struct _func_msg_t *msg);
+net_err_t sock_bind_req_in(struct _func_msg_t *msg);
 net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
 net_err_t sock_send(struct _sock_t *sock, const void *buf, size_t len,
