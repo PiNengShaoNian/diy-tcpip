@@ -22,8 +22,25 @@ static void display_udp_packet(udp_pkt_t *pkt) {
   plat_printf("    total len: %d\n", pkt->hdr.total_len);
   plat_printf("    checksum len: %d\n", pkt->hdr.checksum);
 }
+
+static void display_udp_list(void) {
+  plat_printf("---------- udp list ---------\n");
+
+  nlist_node_t *node;
+  int idx = 0;
+  nlist_for_each(node, &udp_list) {
+    udp_t *udp = (udp_t *)nlist_entry(node, sock_t, node);
+    plat_printf("[%d]:\n", idx++);
+    dbg_dump_ip(DBG_UDP, "    local: ", &udp->base.local_ip);
+    plat_printf("    local port: %d\n", udp->base.local_port);
+    dbg_dump_ip(DBG_UDP, "    remote ip: ", &udp->base.remote_ip);
+    plat_printf("    local port: %d\n", udp->base.remote_port);
+    plat_printf("\n");
+  }
+}
 #else
 #define display_udp_packet(pkt)
+#define display_udp_list()
 #endif
 
 net_err_t udp_init(void) {
@@ -150,11 +167,31 @@ net_err_t udp_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
   return NET_ERR_OK;
 }
 
+net_err_t udp_close(sock_t *sock) {
+  udp_t *raw = (udp_t *)sock;
+
+  nlist_node_t *node;
+
+  nlist_remove(&udp_list, &sock->node);
+
+  while ((node = nlist_remove_first(&raw->recv_list))) {
+    pktbuf_t *buf = nlist_entry(node, pktbuf_t, node);
+    pktbuf_free(buf);
+  }
+
+  sock_uninit(sock);
+
+  mblock_free(&udp_mblock, sock);
+  display_udp_list();
+  return NET_ERR_OK;
+}
+
 sock_t *udp_create(int family, int protocol) {
   static const sock_ops_t udp_ops = {
       .setopt = sock_setopt,
       .sendto = udp_sendto,
       .recvfrom = udp_recvfrom,
+      .close = udp_close,
   };
   udp_t *udp = mblock_alloc(&udp_mblock, -1);
 
@@ -178,6 +215,7 @@ sock_t *udp_create(int family, int protocol) {
   }
 
   nlist_insert_last(&udp_list, &udp->base.node);
+  display_udp_list();
   return (sock_t *)udp;
 create_failed:
   sock_uninit(&udp->base);
