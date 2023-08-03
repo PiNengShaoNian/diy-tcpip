@@ -14,6 +14,18 @@ static udp_t udp_tbl[UDP_MAX_NR];
 static mblock_t udp_mblock;
 static nlist_t udp_list;
 
+#if DBG_DISP_ENABLED(DBG_UDP)
+static void display_udp_packet(udp_pkt_t *pkt) {
+  plat_printf("udp packet:\n");
+  plat_printf("    src port: %d\n", pkt->hdr.src_port);
+  plat_printf("    dest port: %d\n", pkt->hdr.dest_port);
+  plat_printf("    total len: %d\n", pkt->hdr.total_len);
+  plat_printf("    checksum len: %d\n", pkt->hdr.checksum);
+}
+#else
+#define display_udp_packet(pkt)
+#endif
+
 net_err_t udp_init(void) {
   dbg_info(DBG_UDP, "udp init");
 
@@ -204,6 +216,15 @@ static udp_t *udp_find(ipaddr_t *src_ip, uint16_t sport, ipaddr_t *dest_ip,
   return (udp_t *)0;
 }
 
+static net_err_t is_pkt_ok(udp_pkt_t *pkt, int size) {
+  if (size < sizeof(udp_hdr_t) || size < pkt->hdr.total_len) {
+    dbg_warning(DBG_UDP, "udp packet size error");
+    return NET_ERR_SIZE;
+  }
+
+  return NET_ERR_OK;
+}
+
 net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   int iphdr_size = ipv4_hdr_size((ipv4_pkt_t *)pktbuf_data(buf));
   net_err_t err = pktbuf_set_cont(buf, sizeof(udp_hdr_t) + iphdr_size);
@@ -221,6 +242,37 @@ net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   if (!udp) {
     dbg_error(DBG_UDP, "no udp for packet");
     return NET_ERR_UNREACH;
+  }
+
+  pktbuf_remove_header(buf, iphdr_size);
+  udp_pkt = (udp_pkt_t *)pktbuf_data(buf);
+  if (udp_pkt->hdr.checksum) {
+    pktbuf_reset_acc(buf);
+    if (checksum_peso(buf, dest_ip, src_ip, NET_PROTOCOL_UDP)) {
+      dbg_warning(DBG_UDP, "udp check sum failed.");
+      return NET_ERR_BROKEN;
+    }
+  }
+
+  udp_pkt->hdr.src_port = x_ntohs(udp_pkt->hdr.src_port);
+  udp_pkt->hdr.dest_port = x_ntohs(udp_pkt->hdr.dest_port);
+  udp_pkt->hdr.total_len = x_ntohs(udp_pkt->hdr.total_len);
+  if ((err = is_pkt_ok(udp_pkt, buf->total_size)) < 0) {
+    dbg_warning(DBG_UDP, "udp packet error");
+    return err;
+  }
+
+  pktbuf_remove_header(buf, sizeof(udp_hdr_t) - sizeof(udp_from_t));
+  udp_from_t *from = (udp_from_t *)pktbuf_data(buf);
+  from->port = remote_port;
+  ipaddr_copy(&from->from, src_ip);
+
+  if (nlist_count(&udp->recv_list) < UDP_MAX_RECV) {
+    nlist_insert_last(&udp->recv_list, &buf->node);
+
+    sock_wakeup((sock_t *)udp, SOCK_WAIT_READ, NET_ERR_OK);
+  } else {
+    pktbuf_free(buf);
   }
 
   return NET_ERR_OK;
