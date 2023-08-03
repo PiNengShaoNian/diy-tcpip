@@ -130,12 +130,29 @@ net_err_t raw_close(sock_t *sock) {
   return NET_ERR_OK;
 }
 
+net_err_t raw_connect(sock_t *s, const struct x_sockaddr *addr,
+                      const x_socklen_t addr_len) {
+  sock_connect(s, addr, addr_len);
+  display_raw_list();
+  return NET_ERR_OK;
+}
+
+net_err_t raw_bind(sock_t *s, const struct x_sockaddr *addr, x_socklen_t len) {
+  net_err_t err = sock_bind(s, addr, len);
+  display_raw_list();
+  return NET_ERR_OK;
+}
+
 sock_t *raw_create(int family, int protocol) {
   static const sock_ops_t raw_ops = {
       .sendto = raw_sendto,
       .recvfrom = raw_recvfrom,
       .setopt = sock_setopt,
       .close = raw_close,
+      .send = sock_send,
+      .recv = sock_recv,
+      .connect = raw_connect,
+      .bind = raw_bind,
   };
   raw_t *raw = mblock_alloc(&raw_mblock, -1);
 

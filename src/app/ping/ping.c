@@ -52,7 +52,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
   addr.sin_addr.s_addr = inet_addr(dest);
   addr.sin_port = 0;
 
-#if 0
+#if 1
   int err = connect(s, (const struct sockaddr *)&addr, sizeof(addr));
   if (err != 0) {
     printf("connect failed.\n");
@@ -75,11 +75,11 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
     ping->req.echo_hdr.seq = seq;
     ping->req.echo_hdr.checksum = x_checksum_16(&ping->req, total_size);
 
-#if 1
+#if 0
     int size = sendto(s, (const char *)&ping->req, total_size, 0,
                       (const struct sockaddr *)&addr, sizeof(addr));
 #endif
-    // int size = send(s, (const char *)&ping->req, total_size, 0);
+    int size = send(s, (const char *)&ping->req, total_size, 0);
 
     if (size < 0) {
       plat_printf("send ping request failed.\n");
@@ -93,11 +93,11 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
     do {
       struct sockaddr_in from_addr;
       socklen_t addr_len = sizeof(from_addr);
-#if 1
+#if 0
       size = recvfrom(s, (char *)&ping->reply, sizeof(ping->reply), 0,
                       (struct sockaddr *)&from_addr, &addr_len);
 #endif
-      // size = recv(s, (char *)&ping->reply, sizeof(ping->reply), 0);
+      size = recv(s, (char *)&ping->reply, sizeof(ping->reply), 0);
 
       if (size < 0) {
         plat_printf("ping recv tmo\n");

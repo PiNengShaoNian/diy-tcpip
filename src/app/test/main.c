@@ -396,7 +396,7 @@ int main(int argc, char **argv) {
   char cmd[32], param[32];
 
   ping_run(&p, friend0_ip, 4, 64, 1000);
-  ping_run(&p, "8.8.8.8", 4, 64, 1000);
+  // ping_run(&p, "8.8.8.8", 4, 64, 1000);
 
   while (1) {
     printf(">>");
