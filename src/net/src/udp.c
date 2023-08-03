@@ -115,9 +115,47 @@ fail:
   return err;
 }
 
+net_err_t udp_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
+                       struct x_sockaddr *src, x_socklen_t *src_len,
+                       ssize_t *result_len) {
+  udp_t *udp = (udp_t *)sock;
+  nlist_node_t *first = nlist_remove_first(&udp->recv_list);
+
+  if (!first) {
+    *result_len = 0;
+    return NET_ERR_NEED_WAIT;
+  }
+
+  pktbuf_t *pktbuf = nlist_entry(first, pktbuf_t, node);
+  udp_from_t *from = (udp_from_t *)pktbuf_data(pktbuf);
+  struct x_sockaddr_in *addr = (struct x_sockaddr_in *)src;
+  plat_memset(addr, 0, sizeof(struct x_sockaddr_in));
+  addr->sin_family = AF_INET;
+  addr->sin_port = x_htons(from->port);
+  ipaddr_to_buf(&from->from, addr->sin_addr.addr_array);
+
+  pktbuf_remove_header(pktbuf, sizeof(udp_from_t));
+
+  int size = (pktbuf->total_size > (int)len) ? (int)len : pktbuf->total_size;
+  pktbuf_reset_acc(pktbuf);
+  net_err_t err = pktbuf_read(pktbuf, buf, size);
+  if (err < 0) {
+    pktbuf_free(pktbuf);
+    dbg_error(DBG_RAW, "pktbuf read error");
+    return err;
+  }
+
+  pktbuf_free(pktbuf);
+  *result_len = size;
+  return NET_ERR_OK;
+}
+
 sock_t *udp_create(int family, int protocol) {
-  static const sock_ops_t udp_ops = {.setopt = sock_setopt,
-                                     .sendto = udp_sendto};
+  static const sock_ops_t udp_ops = {
+      .setopt = sock_setopt,
+      .sendto = udp_sendto,
+      .recvfrom = udp_recvfrom,
+  };
   udp_t *udp = mblock_alloc(&udp_mblock, -1);
 
   if (!udp) {
@@ -230,7 +268,7 @@ net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   net_err_t err = pktbuf_set_cont(buf, sizeof(udp_hdr_t) + iphdr_size);
 
   if (err < 0) {
-    dbg_error(DBG_UDP, "se udp cont failed.");
+    dbg_error(DBG_UDP, "set udp cont failed.");
     return err;
   }
 

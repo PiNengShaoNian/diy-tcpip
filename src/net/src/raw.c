@@ -79,7 +79,7 @@ fail:
 }
 
 net_err_t raw_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
-                       const struct x_sockaddr *src, x_socklen_t *src_len,
+                       struct x_sockaddr *src, x_socklen_t *src_len,
                        ssize_t *result_len) {
   raw_t *raw = (raw_t *)sock;
   nlist_node_t *first = nlist_remove_first(&raw->recv_list);

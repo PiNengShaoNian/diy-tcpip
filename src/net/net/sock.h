@@ -37,7 +37,7 @@ typedef struct _sock_ops_t {
                       int flags, const struct x_sockaddr *dest,
                       x_socklen_t dest_len, ssize_t *result_len);
   net_err_t (*recvfrom)(struct _sock_t *sock, void *buf, size_t len, int flags,
-                        const struct x_sockaddr *src, x_socklen_t *src_len,
+                        struct x_sockaddr *src, x_socklen_t *src_len,
                         ssize_t *result_len);
   net_err_t (*setopt)(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
