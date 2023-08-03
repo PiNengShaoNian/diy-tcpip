@@ -208,7 +208,46 @@ net_err_t sock_sendto_req_in(struct _func_msg_t *msg) {
   return err;
 }
 
-net_err_t sock_send_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+net_err_t sock_send(struct _sock_t *sock, const void *buf, size_t len,
+                    int flags, ssize_t *result_len) {
+  struct x_sockaddr_in dest;
+  dest.sin_family = sock->family;
+  dest.sin_port = x_htons(sock->remote_port);
+  ipaddr_to_buf(&sock->remote_ip, dest.sin_addr.addr_array);
+
+  return sock->ops->sendto(sock, buf, len, flags,
+                           (const struct x_sockaddr *)&dest, sizeof(dest),
+                           result_len);
+}
+
+net_err_t sock_send_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+  sock_data_t *data = &req->data;
+
+  if (!sock->ops->send) {
+    dbg_error(DBG_SOCKET, "function not impl");
+    return NET_ERR_NOT_SUPPORT;
+  }
+
+  net_err_t err =
+      sock->ops->send(sock, data->buf, data->len, data->flags, &data->comp_len);
+
+  if (err == NET_ERR_NEED_WAIT) {
+    if (sock->snd_wait) {
+      sock_wait_add(sock->snd_wait, sock->snd_tmo, req);
+    }
+  }
+
+  return err;
+}
 
 net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
   sock_req_t *req = (sock_req_t *)msg->param;
