@@ -100,14 +100,14 @@ net_err_t netdev_init(void) {
 
   netif_set_active(netif);
 
-  pktbuf_t *buf = pktbuf_alloc(32);
-  pktbuf_fill(buf, 0x53, 32);
+  // pktbuf_t *buf = pktbuf_alloc(32);
+  // pktbuf_fill(buf, 0x53, 32);
 
-  ipaddr_t dest, src;
-  ipaddr_from_str(&dest, friend0_ip);
-  ipaddr_from_str(&src, netdev0_ip);
+  // ipaddr_t dest, src;
+  // ipaddr_from_str(&dest, friend0_ip);
+  // ipaddr_from_str(&src, netdev0_ip);
   // netif_out(netif, &dest, buf);
-  ipv4_out(0, &dest, &src, buf);
+  // ipv4_out(0, &dest, &src, buf);
 
   // ipaddr_from_str(&dest, "192.168.174.255");
   // buf = pktbuf_alloc(32);

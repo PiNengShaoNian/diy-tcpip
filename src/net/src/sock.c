@@ -441,3 +441,23 @@ net_err_t sock_connect(sock_t *sock, const struct x_sockaddr *addr,
   sock->remote_port = x_ntohs(remote->sin_port);
   return NET_ERR_OK;
 }
+
+net_err_t sock_bind(sock_t *sock, const struct x_sockaddr *addr,
+                    x_socklen_t len) {
+  struct x_sockaddr_in *local = (struct x_sockaddr_in *)addr;
+  ipaddr_t local_ip;
+  ipaddr_from_buf(&local_ip, local->sin_addr.addr_array);
+
+  if (!ipaddr_is_any(&local_ip)) {
+    rentry_t *rt = rt_find(&local_ip);
+    if (!rt || !ipaddr_is_equal(&rt->netif->ipaddr, &local_ip)) {
+      dbg_error(DBG_SOCKET, "addr error.");
+      return NET_ERR_PARAM;
+    }
+  }
+
+  ipaddr_copy(&sock->local_ip, &local_ip);
+  sock->local_port = x_ntohs(local->sin_port);
+
+  return NET_ERR_OK;
+}

@@ -60,7 +60,7 @@ void ipaddr_to_buf(const ipaddr_t* src, uint8_t* in_buf) {
   *(uint32_t*)in_buf = src->q_addr;
 }
 
-void ipaddr_from_buf(ipaddr_t* dest, uint8_t* ip_buf) {
+void ipaddr_from_buf(ipaddr_t* dest, const uint8_t* ip_buf) {
   dest->q_addr = *(uint32_t*)ip_buf;
   dest->type = IPADDR_V4;
 }

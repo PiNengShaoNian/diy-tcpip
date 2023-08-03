@@ -149,4 +149,7 @@ net_err_t sock_init(sock_t *sock, int family, int protocol,
 void sock_uninit(sock_t *sock);
 net_err_t sock_recv(struct _sock_t *sock, void *buf, size_t len, int flags,
                     ssize_t *result_len);
+net_err_t sock_bind(sock_t *sock, const struct x_sockaddr *addr,
+                    x_socklen_t len);
+
 #endif

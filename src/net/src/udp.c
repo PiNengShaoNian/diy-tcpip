@@ -82,6 +82,42 @@ static net_err_t alloc_port(sock_t *sock) {
   return NET_ERR_NONE;
 }
 
+net_err_t udp_bind(sock_t *s, const struct x_sockaddr *addr, x_socklen_t len) {
+  const struct x_sockaddr_in *addr_in = (const struct x_sockaddr_in *)addr;
+  if (s->local_port != 0) {
+    dbg_error(DBG_UDP, "already bind");
+    return NET_ERR_BIND;
+  }
+
+  int port = x_ntohs(addr_in->sin_port);
+  ipaddr_t local_ip;
+  ipaddr_from_buf(&local_ip, addr_in->sin_addr.addr_array);
+
+  nlist_node_t *node;
+  udp_t *udp = (udp_t *)0;
+  nlist_for_each(node, &udp_list) {
+    udp_t *u = (udp_t *)nlist_entry(node, sock_t, node);
+    if (u == (udp_t *)s) {
+      continue;
+    }
+
+    if (s->local_port == port && (ipaddr_is_equal(&s->local_ip, &local_ip))) {
+      udp = u;
+      break;
+    }
+  }
+
+  if (udp) {
+    dbg_error(DBG_UDP, "port already used!");
+    return NET_ERR_BIND;
+  } else {
+    sock_bind(s, addr, len);
+  }
+
+  display_udp_list();
+  return NET_ERR_OK;
+}
+
 static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
                             int flags, const struct x_sockaddr *dest,
                             x_socklen_t dest_len, ssize_t *result_len) {
@@ -202,6 +238,7 @@ sock_t *udp_create(int family, int protocol) {
       .recv = sock_recv,
       .connect = udp_connect,
       .close = udp_close,
+      .bind = udp_bind,
   };
   udp_t *udp = mblock_alloc(&udp_mblock, -1);
 
