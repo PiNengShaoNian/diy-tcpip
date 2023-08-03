@@ -279,7 +279,43 @@ net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg) {
   return err;
 }
 
-net_err_t sock_recv_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+net_err_t sock_recv(struct _sock_t *sock, void *buf, size_t len, int flags,
+                    ssize_t *result_len) {
+  struct x_sockaddr src;
+  x_socklen_t addr_len;
+
+  return sock->ops->recvfrom(sock, buf, len, flags, &src, &addr_len,
+                             result_len);
+}
+
+net_err_t sock_recv_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+  sock_data_t *data = &req->data;
+
+  if (!sock->ops->recv) {
+    dbg_error(DBG_SOCKET, "function not impl");
+    return NET_ERR_NOT_SUPPORT;
+  }
+
+  net_err_t err = sock->ops->recv(sock, data->buf, data->len, data->flags,
+                                  &req->data.comp_len);
+
+  if (err == NET_ERR_NEED_WAIT) {
+    if (sock->rcv_wait) {
+      sock_wait_add(sock->rcv_wait, sock->rcv_tmo, req);
+    }
+  }
+
+  return err;
+}
 
 net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen) {

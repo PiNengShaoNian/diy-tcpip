@@ -41,6 +41,8 @@ typedef struct _sock_ops_t {
   net_err_t (*recvfrom)(struct _sock_t *sock, void *buf, size_t len, int flags,
                         struct x_sockaddr *src, x_socklen_t *src_len,
                         ssize_t *result_len);
+  net_err_t (*recv)(struct _sock_t *sock, void *buf, size_t len, int flags,
+                    ssize_t *result_len);
   net_err_t (*connect)(struct _sock_t *s, const struct x_sockaddr *addr,
                        x_socklen_t addr_len);
   net_err_t (*setopt)(struct _sock_t *s, int level, int optname,
@@ -136,5 +138,6 @@ net_err_t sock_connect(sock_t *sock, const struct x_sockaddr *addr,
 net_err_t sock_init(sock_t *sock, int family, int protocol,
                     const sock_ops_t *ops);
 void sock_uninit(sock_t *sock);
-
+net_err_t sock_recv(struct _sock_t *sock, void *buf, size_t len, int flags,
+                    ssize_t *result_len);
 #endif

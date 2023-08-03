@@ -199,6 +199,7 @@ sock_t *udp_create(int family, int protocol) {
       .sendto = udp_sendto,
       .send = sock_send,
       .recvfrom = udp_recvfrom,
+      .recv = sock_recv,
       .connect = udp_connect,
       .close = udp_close,
   };
