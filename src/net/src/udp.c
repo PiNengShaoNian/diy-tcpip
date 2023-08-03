@@ -186,11 +186,19 @@ net_err_t udp_close(sock_t *sock) {
   return NET_ERR_OK;
 }
 
+net_err_t udp_connect(sock_t *s, const struct x_sockaddr *addr,
+                      const x_socklen_t addr_len) {
+  sock_connect(s, addr, addr_len);
+  display_udp_list();
+  return NET_ERR_OK;
+}
+
 sock_t *udp_create(int family, int protocol) {
   static const sock_ops_t udp_ops = {
       .setopt = sock_setopt,
       .sendto = udp_sendto,
       .recvfrom = udp_recvfrom,
+      .connect = udp_connect,
       .close = udp_close,
   };
   udp_t *udp = mblock_alloc(&udp_mblock, -1);
@@ -278,7 +286,7 @@ static udp_t *udp_find(ipaddr_t *src_ip, uint16_t sport, ipaddr_t *dest_ip,
     }
 
     if (!ipaddr_is_any(&s->remote_ip) &&
-        !ipaddr_is_equal(dest_ip, &s->remote_ip)) {
+        !ipaddr_is_equal(src_ip, &s->remote_ip)) {
       continue;
     }
 
