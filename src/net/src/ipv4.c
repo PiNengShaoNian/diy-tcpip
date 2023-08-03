@@ -7,6 +7,7 @@
 #include "raw.h"
 #include "timer.h"
 #include "tools.h"
+#include "udp.h"
 
 static uint16_t packet_id = 0;
 
@@ -404,10 +405,20 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
       }
 
       return err;
-    case NET_PROTOCOL_UDP:
-      iphdr_htons(pkt);
-      icmpv4_out_unreach(src_ip, &netif->ipaddr, ICMPv4_UNREACH_PORT, buf);
-      break;
+    case NET_PROTOCOL_UDP: {
+      net_err_t err = udp_in(buf, src_ip, dest_ip);
+      if (err < 0) {
+        dbg_warning(DBG_IP, "udp in error");
+        if (err == NET_ERR_UNREACH) {
+          iphdr_htons(pkt);
+          icmpv4_out_unreach(src_ip, &netif->ipaddr, ICMPv4_UNREACH_PORT, buf);
+        }
+
+        return err;
+      }
+
+      return NET_ERR_OK;
+    }
     case NET_PROTOCOL_TCP:
       break;
     default: {

@@ -168,3 +168,60 @@ net_err_t udp_out(ipaddr_t *dest_ip, uint16_t dest_port, ipaddr_t *src_ip,
 
   return NET_ERR_OK;
 }
+
+static udp_t *udp_find(ipaddr_t *src_ip, uint16_t sport, ipaddr_t *dest_ip,
+                       uint16_t dport) {
+  if (!dport) {
+    return (udp_t *)0;
+  }
+
+  nlist_node_t *node;
+
+  nlist_for_each(node, &udp_list) {
+    sock_t *s = nlist_entry(node, sock_t, node);
+
+    if (s->local_port != dport) {
+      continue;
+    }
+
+    if (!ipaddr_is_any(&s->local_ip) &&
+        !ipaddr_is_equal(dest_ip, &s->local_ip)) {
+      continue;
+    }
+
+    if (!ipaddr_is_any(&s->remote_ip) &&
+        !ipaddr_is_equal(dest_ip, &s->remote_ip)) {
+      continue;
+    }
+
+    if (s->remote_port && (s->remote_port != sport)) {
+      continue;
+    }
+
+    return (udp_t *)s;
+  }
+
+  return (udp_t *)0;
+}
+
+net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
+  int iphdr_size = ipv4_hdr_size((ipv4_pkt_t *)pktbuf_data(buf));
+  net_err_t err = pktbuf_set_cont(buf, sizeof(udp_hdr_t) + iphdr_size);
+
+  if (err < 0) {
+    dbg_error(DBG_UDP, "se udp cont failed.");
+    return err;
+  }
+
+  udp_pkt_t *udp_pkt = (udp_pkt_t *)(pktbuf_data(buf) + iphdr_size);
+  uint16_t local_port = x_ntohs(udp_pkt->hdr.dest_port);
+  uint16_t remote_port = x_ntohs(udp_pkt->hdr.src_port);
+
+  udp_t *udp = (udp_t *)udp_find(src_ip, remote_port, dest_ip, local_port);
+  if (!udp) {
+    dbg_error(DBG_UDP, "no udp for packet");
+    return NET_ERR_UNREACH;
+  }
+
+  return NET_ERR_OK;
+}

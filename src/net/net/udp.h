@@ -32,5 +32,6 @@ net_err_t udp_init(void);
 sock_t *udp_create(int family, int protocol);
 net_err_t udp_out(ipaddr_t *dest_ip, uint16_t dest_port, ipaddr_t *src_ip,
                   uint16_t src_port, pktbuf_t *buf);
+net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip);
 
 #endif
