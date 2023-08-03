@@ -20,6 +20,8 @@ int udp_echo_client_start(const char *ip, int port) {
   server_addr.sin_addr.s_addr = inet_addr(ip);
   server_addr.sin_port = htons(port);
 
+  connect(s, (const struct sockaddr *)&server_addr, sizeof(server_addr));
+
   char buf[128];
   plat_printf(">>");
   while (fgets(buf, sizeof(buf), stdin) != NULL) {

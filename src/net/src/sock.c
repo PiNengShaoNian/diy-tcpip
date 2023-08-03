@@ -306,3 +306,5 @@ net_err_t sock_close_req_in(struct _func_msg_t *msg) {
   socket_free(s);
   return err;
 }
+
+net_err_t sock_conn_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }

@@ -97,6 +97,11 @@ typedef struct _sock_opt_t {
   int len;
 } sock_opt_t;
 
+typedef struct _sock_conn_t {
+  struct x_sockaddr *addr;
+  x_socklen_t addr_len;
+} sock_conn_t;
+
 typedef struct _sock_req_t {
   sock_wait_t *wait;
   int wait_tmo;
@@ -105,6 +110,7 @@ typedef struct _sock_req_t {
     sock_create_t create;
     sock_data_t data;
     sock_opt_t opt;
+    sock_conn_t conn;
   };
 } sock_req_t;
 
@@ -114,6 +120,7 @@ net_err_t sock_send_req_in(struct _func_msg_t *msg);
 net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
 net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
 net_err_t sock_close_req_in(struct _func_msg_t *msg);
+net_err_t sock_conn_req_in(struct _func_msg_t *msg);
 net_err_t sock_setopt(struct _sock_t *s, int level, int optname,
                       const char *optval, int optlen);
 
