@@ -47,5 +47,6 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
   x_setsockopt(s, level, optname, optval, len)
 #define close(s) x_close(s)
 #define connect(s, addr, addr_len) x_connect(s, addr, addr_len)
+#define send(s, buf, len, flags) x_send(s, buf, len, flags)
 
 #endif

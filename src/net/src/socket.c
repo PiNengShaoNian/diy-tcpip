@@ -51,6 +51,43 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
     req.data.addr_len = &dest_len;
     req.data.comp_len = 0;
 
+    net_err_t err = exmsg_func_exec(sock_sendto_req_in, &req);
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "create socket failed.");
+      return -1;
+    }
+
+    if (req.wait && (err = sock_wait_enter(req.wait, req.wait_tmo)) < 0) {
+      dbg_error(DBG_SOCKET, "send failed.");
+      return err;
+    }
+
+    len -= req.data.comp_len;
+    start += req.data.comp_len;
+    send_size += (ssize_t)req.data.comp_len;
+  }
+
+  return send_size;
+}
+
+ssize_t x_send(int s, const void* buf, size_t len, int flags) {
+  if (!buf || !len) {
+    dbg_error(DBG_SOCKET, "param error");
+    return -1;
+  }
+
+  ssize_t send_size = 0;
+  uint8_t* start = (uint8_t*)buf;
+  while (len > 0) {
+    sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.wait_tmo = 0;
+    req.sockfd = s;
+    req.data.buf = start;
+    req.data.len = len;
+    req.data.flags = 0;
+    req.data.comp_len = 0;
+
     net_err_t err = exmsg_func_exec(sock_send_req_in, &req);
     if (err < 0) {
       dbg_error(DBG_SOCKET, "create socket failed.");

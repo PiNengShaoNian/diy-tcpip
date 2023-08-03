@@ -118,6 +118,7 @@ typedef struct _sock_req_t {
 
 net_err_t socket_init(void);
 net_err_t sock_create_req_in(struct _func_msg_t *msg);
+net_err_t sock_sendto_req_in(struct _func_msg_t *msg);
 net_err_t sock_send_req_in(struct _func_msg_t *msg);
 net_err_t sock_recvfrom_req_in(struct _func_msg_t *msg);
 net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
