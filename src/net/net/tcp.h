@@ -72,6 +72,19 @@ typedef struct _tcp_t {
   struct {
     sock_wait_t wait;
   } conn;
+
+  struct {
+    uint32_t una;
+    uint32_t nxt;
+    uint32_t iss;
+    sock_wait_t wait;
+  } snd;
+
+  struct {
+    uint32_t nxt;
+    uint32_t iss;
+    sock_wait_t wait;
+  } rcv;
 } tcp_t;
 
 #if DBG_DISP_ENABLED(DBG_TCP)
