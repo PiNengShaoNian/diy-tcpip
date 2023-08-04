@@ -3,6 +3,7 @@
 
 #include "net_err.h"
 #include "nlist.h"
+#include "pktbuf.h"
 #include "sock.h"
 
 #pragma pack(1)
@@ -53,6 +54,16 @@ typedef struct _tcp_pkt_t {
 
 #pragma pack()
 
+typedef struct _tcp_seg_t {
+  ipaddr_t local_ip;
+  ipaddr_t remote_ip;
+  tcp_hdr_t *hdr;
+  pktbuf_t *buf;
+  uint32_t data_len;
+  uint32_t seq;
+  uint32_t seq_len;
+} tcp_seg_t;
+
 typedef struct _tcp_t {
   sock_t base;
 
@@ -64,5 +75,7 @@ typedef struct _tcp_t {
 net_err_t tcp_init(void);
 sock_t *tcp_create(int family, int protocol);
 static inline int tcp_hdr_size(tcp_hdr_t *hdr) { return hdr->shdr * 4; }
-
+static inline void tcp_set_hdr_size(tcp_hdr_t *hdr, int size) {
+  hdr->shdr = size / 4;
+}
 #endif
