@@ -7,6 +7,48 @@ static tcp_t tcp_tbl[TCP_MAX_NR];
 static mblock_t tcp_mblock;
 static nlist_t tcp_list;
 
+#if DBG_DISP_ENABLED(DBG_TCP)
+void tcp_show_info(char *msg, tcp_t *tcp) {
+  plat_printf("%s\n", msg);
+  plat_printf("  local port: %u, remote port: %u\n", tcp->base.local_port,
+              tcp->base.remote_port);
+}
+
+void tcp_show_pkt(char *msg, tcp_hdr_t *tcp_hdr, pktbuf_t *buf) {
+  plat_printf("%s\n", msg);
+  plat_printf("  sport: %u, dport: %u\n", tcp_hdr->sport, tcp_hdr->dport);
+  plat_printf("  seq: %u, ack: %u, win: %u\n", tcp_hdr->seq, tcp_hdr->ack,
+              tcp_hdr->win);
+  plat_printf("  flags:");
+  if (tcp_hdr->f_syn) {
+    plat_printf(" syn");
+  }
+  if (tcp_hdr->f_rst) {
+    plat_printf(" reset");
+  }
+  if (tcp_hdr->ack) {
+    plat_printf(" ack");
+  }
+  if (tcp_hdr->f_psh) {
+    plat_printf(" push");
+  }
+  if (tcp_hdr->f_fin) {
+    plat_printf(" finish");
+  }
+  plat_printf("\nlen=%d\n", buf->total_size - tcp_hdr_size(tcp_hdr));
+}
+
+void tcp_show_list(void) {
+  plat_printf("---------tcp list--------\n");
+  nlist_node_t *node;
+  nlist_for_each(node, &tcp_list) {
+    tcp_t *tcp = (tcp_t *)nlist_entry(node, sock_t, node);
+
+    tcp_show_info("", tcp);
+  }
+}
+#endif
+
 net_err_t tcp_init(void) {
   dbg_info(DBG_TCP, "tcp init.");
 

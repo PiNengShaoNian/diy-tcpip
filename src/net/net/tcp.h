@@ -1,6 +1,8 @@
 #ifndef TCP_H
 #define TCP_H
 
+#include "dbg.h"
+#include "net_cfg.h"
 #include "net_err.h"
 #include "nlist.h"
 #include "pktbuf.h"
@@ -71,6 +73,16 @@ typedef struct _tcp_t {
 
   sock_wait_t recv_wait;
 } tcp_t;
+
+#if DBG_DISP_ENABLED(DBG_TCP)
+void tcp_show_info(char *msg, tcp_t *tcp);
+void tcp_show_pkt(char *msg, tcp_hdr_t *tcp_hdr, pktbuf_t *buf);
+void tcp_show_list(void);
+#else
+#define tcp_show_info(msg, tcp)
+#define tcp_show_pkt(msg, tcp_hdr, buf)
+#define tcp_show_list()
+#endif
 
 net_err_t tcp_init(void);
 sock_t *tcp_create(int family, int protocol);

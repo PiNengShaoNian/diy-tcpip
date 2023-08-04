@@ -50,10 +50,14 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   tcp_hdr->win = x_ntohs(tcp_hdr->win);
   tcp_hdr->urgptr = x_ntohs(tcp_hdr->urgptr);
 
+  tcp_show_pkt("tcp in", tcp_hdr, buf);
+
   tcp_seg_t seg;
   tcp_seg_init(&seg, buf, dest_ip, src_ip);
 
   tcp_send_reset(&seg);
+
+  tcp_show_list();
 
   return NET_ERR_OK;
 }

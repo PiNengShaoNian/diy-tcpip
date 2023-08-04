@@ -7,6 +7,8 @@
 
 static net_err_t send_out(tcp_hdr_t *out, pktbuf_t *buf, ipaddr_t *dest,
                           ipaddr_t *src) {
+  tcp_show_pkt("tcp out", out, buf);
+
   out->sport = x_htons(out->sport);
   out->dport = x_htons(out->dport);
   out->seq = x_htons(out->seq);
