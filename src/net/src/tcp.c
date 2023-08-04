@@ -69,8 +69,18 @@ static tcp_t *tcp_get_free(int wait) {
   return tcp;
 }
 
+net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
+                      x_socklen_t addr_len) {
+  return NET_ERR_OK;
+}
+
+net_err_t tcp_close(struct _sock_t *sock) { return NET_ERR_OK; }
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
-  static sock_ops_t ops;
+  static sock_ops_t ops = {
+      .connect = tcp_connect,
+      .close = tcp_close,
+  };
   tcp_t *tcp = tcp_get_free(wait);
   if (!tcp) {
     dbg_error(DBG_TCP, "no tcp sock");
