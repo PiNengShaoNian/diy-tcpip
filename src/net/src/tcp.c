@@ -2,6 +2,9 @@
 
 #include "dbg.h"
 #include "mblock.h"
+#include "protocol.h"
+#include "socket.h"
+#include "tools.h"
 
 static tcp_t tcp_tbl[TCP_MAX_NR];
 static mblock_t tcp_mblock;
@@ -69,8 +72,57 @@ static tcp_t *tcp_get_free(int wait) {
   return tcp;
 }
 
+int tcp_alloc_port(void) {
+  static int search_idx = NET_PORT_DYN_START;
+
+  for (int i = NET_PORT_DYN_START; i < NET_PORT_DYN_END; i++) {
+    nlist_node_t *node;
+    nlist_for_each(node, &tcp_list) {
+      sock_t *sock = nlist_entry(node, sock_t, node);
+      if (sock->local_port == search_idx) {
+        break;
+      }
+    }
+
+    if (!node) {
+      return search_idx;
+    }
+
+    if (++search_idx >= NET_PORT_DYN_END) {
+      search_idx = NET_PORT_DYN_START;
+    }
+  }
+
+  return -1;
+}
+
 net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
                       x_socklen_t addr_len) {
+  const struct x_sockaddr_in *addr_in = (const struct x_sockaddr_in *)addr;
+
+  ipaddr_from_buf(&s->remote_ip, (const uint8_t *)&addr_in->sin_addr.s_addr);
+  s->remote_port = x_ntohs(addr_in->sin_port);
+
+  if (s->local_port == NET_PORT_EMPTY) {
+    int port = tcp_alloc_port();
+    if (port == -1) {
+      dbg_error(DBG_TCP, "alloc port failed.");
+      return NET_ERR_NONE;
+    }
+
+    s->local_port = port;
+  }
+
+  if (ipaddr_is_any(&s->local_ip)) {
+    rentry_t *rt = rt_find(&s->remote_ip);
+    if (rt == (rentry_t *)0) {
+      dbg_error(DBG_TCP, "no route to host");
+      return NET_ERR_UNREACH;
+    }
+
+    ipaddr_copy(&s->local_ip, &rt->netif->ipaddr);
+  }
+
   return NET_ERR_OK;
 }
 
