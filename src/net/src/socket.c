@@ -221,6 +221,10 @@ int x_close(int s) {
     return -1;
   }
 
+  if (req.wait) {
+    sock_wait_enter(req.wait, req.wait_tmo);
+  }
+
   return 0;
 }
 
@@ -242,6 +246,11 @@ int x_connect(int s, const struct x_sockaddr* addr, x_socklen_t addr_len) {
   req.conn.addr_len = addr_len;
   net_err_t err = exmsg_func_exec(sock_conn_req_in, &req);
   if (err < 0) {
+    dbg_error(DBG_SOCKET, "conn failed.");
+    return -1;
+  }
+
+  if (req.wait && (err = sock_wait_enter(req.wait, req.wait_tmo)) < 0) {
     dbg_error(DBG_SOCKET, "conn failed.");
     return -1;
   }

@@ -123,7 +123,7 @@ net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
     ipaddr_copy(&s->local_ip, &rt->netif->ipaddr);
   }
 
-  return NET_ERR_OK;
+  return NET_ERR_NEED_WAIT;
 }
 
 net_err_t tcp_close(struct _sock_t *sock) { return NET_ERR_OK; }
@@ -148,7 +148,21 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
     return (tcp_t *)0;
   }
 
+  if (sock_wait_init(&tcp->conn.wait) < 0) {
+    dbg_error(DBG_TCP, "create conn.wait failed.");
+    goto alloc_failed;
+  }
+
+  tcp->base.conn_wait = &tcp->conn.wait;
+
   return tcp;
+
+alloc_failed:
+  if (tcp->base.conn_wait) {
+    sock_wait_destroy(tcp->base.conn_wait);
+  }
+  mblock_free(&tcp_mblock, tcp);
+  return (tcp_t *)0;
 }
 
 static void tcp_insert(tcp_t *tcp) {

@@ -69,9 +69,9 @@ typedef struct _tcp_seg_t {
 typedef struct _tcp_t {
   sock_t base;
 
-  nlist_t recv_list;
-
-  sock_wait_t recv_wait;
+  struct {
+    sock_wait_t wait;
+  } conn;
 } tcp_t;
 
 #if DBG_DISP_ENABLED(DBG_TCP)
