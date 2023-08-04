@@ -47,7 +47,7 @@ net_err_t udp_init(void) {
   dbg_info(DBG_UDP, "udp init");
 
   nlist_init(&udp_list);
-  mblock_init(&udp_mblock, udp_tbl, sizeof(udp_t), RAW_MAX_NR, NLOCKER_NONE);
+  mblock_init(&udp_mblock, udp_tbl, sizeof(udp_t), UDP_MAX_NR, NLOCKER_NONE);
 
   dbg_info(DBG_UDP, "udp init done");
   return NET_ERR_OK;

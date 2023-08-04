@@ -12,6 +12,7 @@
 #include "pktbuf.h"
 #include "raw.h"
 #include "sock.h"
+#include "tcp.h"
 #include "timer.h"
 #include "tools.h"
 #include "udp.h"
@@ -37,6 +38,7 @@ net_err_t net_init(void) {
   socket_init();
   raw_init();
   udp_init();
+  tcp_init();
 
   loop_init();
 
