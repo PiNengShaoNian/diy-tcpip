@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 
   // udp_echo_client_start(friend0_ip, 1000);
   // udp_echo_server_start(2000);
-  tcp_echo_client_start(friend0_ip, 1000);
+  // tcp_echo_client_start(friend0_ip, 1000);
 
   ping_t p;
   char cmd[32], param[32];

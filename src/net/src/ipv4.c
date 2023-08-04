@@ -5,6 +5,7 @@
 #include "mblock.h"
 #include "protocol.h"
 #include "raw.h"
+#include "tcp_in.h"
 #include "timer.h"
 #include "tools.h"
 #include "udp.h"
@@ -419,8 +420,14 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
 
       return NET_ERR_OK;
     }
-    case NET_PROTOCOL_TCP:
-      break;
+    case NET_PROTOCOL_TCP: {
+      pktbuf_remove_header(buf, ipv4_hdr_size(pkt));
+      net_err_t err = tcp_in(buf, src_ip, dest_ip);
+      if (err < 0) {
+        dbg_warning(DBG_IP, "tcp in error = %d", err);
+      }
+      return err;
+    }
     default: {
       dbg_warning(DBG_IP, "unknown protocol");
 
