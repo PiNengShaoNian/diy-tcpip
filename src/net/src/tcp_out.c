@@ -41,6 +41,16 @@ net_err_t tcp_send_reset(tcp_seg_t *seg) {
   out->flags = 0;
   out->f_rst = 1;
   tcp_set_hdr_size(out, sizeof(tcp_hdr_t));
+
+  if (in->f_ack) {
+    out->seq = in->ack;
+    out->ack = 0;
+    out->f_ack = 0;
+  } else {
+    out->ack = in->seq + seg->seq_len;
+    out->f_ack = 1;
+  }
+
   out->win = out->urgptr = 0;
 
   return send_out(out, buf, &seg->remote_ip, &seg->local_ip);
