@@ -1,4 +1,4 @@
-#ifndef TCP_H
+﻿#ifndef TCP_H
 #define TCP_H
 
 #include "dbg.h"
@@ -70,19 +70,23 @@ typedef struct _tcp_t {
   sock_t base;
 
   struct {
+    uint32_t syn_out : 1;
+  } flags;
+
+  struct {
     sock_wait_t wait;
   } conn;
 
   struct {
-    uint32_t una;
-    uint32_t nxt;
-    uint32_t iss;
+    uint32_t una;  // 第一个已发送未确认的序号
+    uint32_t nxt;  // 第一个还未发送的序号
+    uint32_t iss;  // 起始的发送序号
     sock_wait_t wait;
   } snd;
 
   struct {
-    uint32_t nxt;
-    uint32_t iss;
+    uint32_t nxt;  // 当前待接收的最小序号
+    uint32_t iss;  // 起始的接收序号
     sock_wait_t wait;
   } rcv;
 } tcp_t;
