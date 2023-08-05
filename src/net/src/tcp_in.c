@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "protocol.h"
 #include "tcp_out.h"
+#include "tcp_state.h"
 #include "tools.h"
 
 void tcp_seg_init(tcp_seg_t *seg, pktbuf_t *buf, ipaddr_t *local,
@@ -18,6 +19,20 @@ void tcp_seg_init(tcp_seg_t *seg, pktbuf_t *buf, ipaddr_t *local,
 }
 
 net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
+  static const tcp_proc_t tcp_state_proc[] = {
+      [TCP_STATE_CLOSED] = tcp_closed_in,
+      [TCP_STATE_LISTEN] = tcp_listen_in,
+      [TCP_STATE_SYN_SENT] = tcp_syn_sent_in,
+      [TCP_STATE_SYN_RECVD] = tcp_syn_recvd_in,
+      [TCP_STATE_ESTABLISHED] = tcp_established_in,
+      [TCP_STATE_FIN_WAIT_1] = tcp_fin_wait_1_in,
+      [TCP_STATE_FIN_WAIT_2] = tcp_fin_wait_2_in,
+      [TCP_STATE_CLOSING] = tcp_closing_in,
+      [TCP_STATE_TIME_WAIT] = tcp_time_wait_in,
+      [TCP_STATE_CLOSE_WAIT] = tcp_close_wait_in,
+      [TCP_STATE_LAST_ACK] = tcp_last_ack_in,
+  };
+
   tcp_hdr_t *tcp_hdr = (tcp_hdr_t *)pktbuf_data(buf);
   if (tcp_hdr->checksum) {
     pktbuf_reset_acc(buf);
@@ -66,7 +81,8 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
     return NET_ERR_OK;
   }
 
-  tcp_show_list();
+  tcp_state_proc[tcp->state](tcp, &seg);
+  tcp_show_info("after tcp in", tcp);
 
   return NET_ERR_OK;
 }
