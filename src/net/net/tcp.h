@@ -66,12 +66,30 @@ typedef struct _tcp_seg_t {
   uint32_t seq_len;
 } tcp_seg_t;
 
+typedef enum _tcp_state_t {
+  TCP_STATE_CLOSED = 0,
+  TCP_STATE_LISTEN,
+  TCP_STATE_SYN_SENT,
+  TCP_STATE_SYN_RECVD,
+  TCP_STATE_ESTABLISHED,
+  TCP_STATE_FIN_WAIT_1,
+  TCP_STATE_FIN_WAIT_2,
+  TCP_STATE_CLOSING,
+  TCP_STATE_TIME_WAIT,
+  TCP_STATE_CLOSE_WAIT,
+  TCP_STATE_LAST_ACK,
+
+  TCP_STATE_MAX,
+} tcp_state_t;
+
 typedef struct _tcp_t {
   sock_t base;
 
   struct {
     uint32_t syn_out : 1;
   } flags;
+
+  tcp_state_t state;
 
   struct {
     sock_wait_t wait;

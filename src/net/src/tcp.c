@@ -5,6 +5,7 @@
 #include "protocol.h"
 #include "socket.h"
 #include "tcp_out.h"
+#include "tcp_state.h"
 #include "tools.h"
 
 static tcp_t tcp_tbl[TCP_MAX_NR];
@@ -121,6 +122,11 @@ net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
   tcp_t *tcp = (tcp_t *)s;
   const struct x_sockaddr_in *addr_in = (const struct x_sockaddr_in *)addr;
 
+  if (tcp->state != TCP_STATE_CLOSED) {
+    dbg_error(DBG_TCP, "tcp is not closed.");
+    return NET_ERR_STATE;
+  }
+
   ipaddr_from_buf(&s->remote_ip, (const uint8_t *)&addr_in->sin_addr.s_addr);
   s->remote_port = x_ntohs(addr_in->sin_port);
 
@@ -155,6 +161,7 @@ net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
     return err;
   }
 
+  tcp_set_state(tcp, TCP_STATE_SYN_SENT);
   return NET_ERR_NEED_WAIT;
 }
 
@@ -179,6 +186,8 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
     mblock_free(&tcp_mblock, tcp);
     return (tcp_t *)0;
   }
+
+  tcp->state = TCP_STATE_CLOSED;
 
   if (sock_wait_init(&tcp->conn.wait) < 0) {
     dbg_error(DBG_TCP, "create conn.wait failed.");
