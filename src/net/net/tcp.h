@@ -121,6 +121,8 @@ void tcp_show_list(void);
 
 net_err_t tcp_init(void);
 sock_t *tcp_create(int family, int protocol);
+tcp_t *tcp_find(ipaddr_t *local_ip, uint16_t local_port, ipaddr_t *remote_ip,
+                uint16_t remote_port);
 static inline int tcp_hdr_size(tcp_hdr_t *hdr) { return hdr->shdr * 4; }
 static inline void tcp_set_hdr_size(tcp_hdr_t *hdr, int size) {
   hdr->shdr = size / 4;

@@ -55,7 +55,16 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   tcp_seg_t seg;
   tcp_seg_init(&seg, buf, dest_ip, src_ip);
 
-  tcp_send_reset(&seg);
+  tcp_t *tcp = tcp_find(dest_ip, tcp_hdr->dport, src_ip, tcp_hdr->sport);
+
+  if (!tcp) {
+    dbg_info(DBG_TCP, "no tcp find");
+    tcp_send_reset(&seg);
+    pktbuf_free(buf);
+
+    tcp_show_list();
+    return NET_ERR_OK;
+  }
 
   tcp_show_list();
 
