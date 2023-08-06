@@ -73,6 +73,7 @@ net_err_t tcp_transmit(tcp_t *tcp) {
   hdr->ack = tcp->rcv.nxt;
   hdr->flags = 0;
   hdr->f_syn = tcp->flags.syn_out;
+  hdr->f_ack = tcp->flags.irs_valid;
   hdr->f_ack = 0;
   hdr->win = 1024;
   hdr->urgptr = 0;
@@ -85,5 +86,16 @@ net_err_t tcp_transmit(tcp_t *tcp) {
 net_err_t tcp_send_syn(tcp_t *tcp) {
   tcp->flags.syn_out = 1;
   tcp_transmit(tcp);
+  return NET_ERR_OK;
+}
+
+net_err_t tcp_ack_process(tcp_t *tcp, tcp_seg_t *seg) {
+  tcp_hdr_t *tcp_hdr = seg->hdr;
+
+  if (tcp->flags.syn_out) {
+    tcp->snd.una++;
+    tcp->flags.syn_out = 0;
+  }
+
   return NET_ERR_OK;
 }
