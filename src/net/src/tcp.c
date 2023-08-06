@@ -191,6 +191,10 @@ net_err_t tcp_close(struct _sock_t *sock) {
       tcp_send_fin(tcp);
       tcp_set_state(tcp, TCP_STATE_LAST_ACK);
       return NET_ERR_NEED_WAIT;
+    case TCP_STATE_ESTABLISHED:
+      tcp_send_fin(tcp);
+      tcp_set_state(tcp, TCP_STATE_FIN_WAIT_1);
+      return NET_ERR_NEED_WAIT;
     default:
       dbg_error(DBG_TCP, "tcp state error.");
       return NET_ERR_STATE;
