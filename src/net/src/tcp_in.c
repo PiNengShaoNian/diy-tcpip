@@ -86,3 +86,24 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
 
   return NET_ERR_OK;
 }
+
+net_err_t tcp_data_in(tcp_t *tcp, tcp_seg_t *seg) {
+  int wakeup = 0;
+  tcp_hdr_t *tcp_hdr = seg->hdr;
+  if (tcp_hdr->f_fin) {
+    tcp->rcv.nxt++;
+    wakeup++;
+  }
+
+  if (wakeup) {
+    if (tcp_hdr->f_fin) {
+      sock_wakeup(&tcp->base, SOCK_WAIT_ALL, NET_ERR_CLOSE);
+    } else {
+      sock_wakeup(&tcp->base, SOCK_WAIT_READ, NET_ERR_OK);
+    }
+
+    tcp_send_ack(tcp, seg);
+  }
+
+  return NET_ERR_OK;
+}
