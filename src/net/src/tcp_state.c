@@ -129,10 +129,14 @@ net_err_t tcp_fin_wait_1_in(tcp_t *tcp, tcp_seg_t *seg) {
 
   tcp_data_in(tcp, seg);
 
-  if (tcp_hdr->f_fin) {
-    tcp_time_wait(tcp);
+  if (tcp->flags.fin_out == 0) {
+    if (tcp_hdr->f_fin) {
+      tcp_time_wait(tcp);
+    } else {
+      tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
+    }
   } else {
-    tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
+    tcp_set_state(tcp, TCP_STATE_CLOSING);
   }
 
   return NET_ERR_OK;
