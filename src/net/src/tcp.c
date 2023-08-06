@@ -165,7 +165,39 @@ net_err_t tcp_connect(struct _sock_t *s, const struct x_sockaddr *addr,
   return NET_ERR_NEED_WAIT;
 }
 
-net_err_t tcp_close(struct _sock_t *sock) { return NET_ERR_OK; }
+void tcp_free(tcp_t *tcp) {
+  sock_wait_destroy(&tcp->conn.wait);
+  sock_wait_destroy(&tcp->snd.wait);
+  sock_wait_destroy(&tcp->rcv.wait);
+
+  nlist_remove(&tcp_list, &tcp->base.node);
+  mblock_free(&tcp_mblock, tcp);
+}
+
+net_err_t tcp_close(struct _sock_t *sock) {
+  tcp_t *tcp = (tcp_t *)sock;
+
+  switch (tcp->state) {
+    case TCP_STATE_CLOSED:
+      dbg_info(DBG_TCP, "tcp already closed.");
+      tcp_free(tcp);
+      return NET_ERR_OK;
+    case TCP_STATE_SYN_SENT:
+    case TCP_STATE_SYN_RECVD:
+      tcp_abort(tcp, NET_ERR_CLOSE);
+      tcp_free(tcp);
+      return NET_ERR_OK;
+    case TCP_STATE_CLOSE_WAIT:
+      tcp_send_fin(tcp);
+      tcp_set_state(tcp, TCP_STATE_LAST_ACK);
+      return NET_ERR_NEED_WAIT;
+    default:
+      dbg_error(DBG_TCP, "tcp state error.");
+      return NET_ERR_STATE;
+  }
+
+  return NET_ERR_OK;
+}
 
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
