@@ -74,7 +74,6 @@ net_err_t tcp_transmit(tcp_t *tcp) {
   hdr->flags = 0;
   hdr->f_syn = tcp->flags.syn_out;
   hdr->f_ack = tcp->flags.irs_valid;
-  hdr->f_ack = 0;
   hdr->win = 1024;
   hdr->urgptr = 0;
   tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
@@ -98,4 +97,26 @@ net_err_t tcp_ack_process(tcp_t *tcp, tcp_seg_t *seg) {
   }
 
   return NET_ERR_OK;
+}
+
+net_err_t tcp_send_ack(tcp_t *tcp, tcp_seg_t *seg) {
+  pktbuf_t *buf = pktbuf_alloc(sizeof(tcp_hdr_t));
+  if (!buf) {
+    dbg_error(DBG_TCP, "no buffer");
+    return NET_ERR_NONE;
+  }
+
+  tcp_hdr_t *hdr = (tcp_hdr_t *)pktbuf_data(buf);
+  plat_memset(hdr, 0, sizeof(tcp_hdr_t));
+  hdr->sport = tcp->base.local_port;
+  hdr->dport = tcp->base.remote_port;
+  hdr->seq = tcp->snd.nxt;
+  hdr->ack = tcp->rcv.nxt;
+  hdr->flags = 0;
+  hdr->f_ack = 1;
+  hdr->win = 1024;
+  hdr->urgptr = 0;
+  tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
+
+  return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
 }
