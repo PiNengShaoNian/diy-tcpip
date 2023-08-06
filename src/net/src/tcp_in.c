@@ -74,7 +74,7 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
 
   if (!tcp) {
     dbg_info(DBG_TCP, "no tcp find");
-    tcp_send_reset(&seg);
+    tcp_closed_in((tcp_t *)0, seg);
     pktbuf_free(buf);
 
     tcp_show_list();
