@@ -259,3 +259,9 @@ tcp_t *tcp_find(ipaddr_t *local_ip, uint16_t local_port, ipaddr_t *remote_ip,
 
   return match;
 }
+
+net_err_t tcp_abort(tcp_t *tcp, net_err_t err) {
+  tcp_set_state(tcp, TCP_STATE_CLOSED);
+  sock_wakeup(&tcp->base, SOCK_WAIT_ALL, err);
+  return NET_ERR_OK;
+}
