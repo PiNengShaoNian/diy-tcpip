@@ -7,6 +7,7 @@
 #include "nlist.h"
 #include "pktbuf.h"
 #include "sock.h"
+#include "tcp_buf.h"
 
 #pragma pack(1)
 typedef struct _tcp_hdr_t {
@@ -99,6 +100,8 @@ typedef struct _tcp_t {
   } conn;
 
   struct {
+    tcp_buf_t buf;
+    uint8_t data[TCP_SBUF_SIZE];
     uint32_t una;  // 第一个已发送未确认的序号
     uint32_t nxt;  // 第一个还未发送的序号
     uint32_t iss;  // 起始的发送序号

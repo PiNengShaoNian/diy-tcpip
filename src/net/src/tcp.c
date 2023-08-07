@@ -110,6 +110,7 @@ static uint32_t tcp_get_iss(void) {
 }
 
 static tcp_init_connect(tcp_t *tcp) {
+  tcp_buf_init(&tcp->snd.buf, tcp->snd.data, TCP_SBUF_SIZE);
   tcp->snd.iss = tcp_get_iss();
   tcp->snd.una = tcp->snd.nxt = tcp->snd.iss;
 
@@ -203,10 +204,40 @@ net_err_t tcp_close(struct _sock_t *sock) {
   return NET_ERR_OK;
 }
 
+static net_err_t tcp_send(struct _sock_t *s, const void *buf, size_t len,
+                          int flags, ssize_t *result_len) {
+  tcp_t *tcp = (tcp_t *)s;
+
+  switch (tcp->state) {
+    case TCP_STATE_CLOSED:
+      dbg_error(DBG_TCP, "tcp closed.");
+      return NET_ERR_CLOSE;
+    case TCP_STATE_FIN_WAIT_1:
+    case TCP_STATE_FIN_WAIT_2:
+    case TCP_STATE_TIME_WAIT:
+    case TCP_STATE_LAST_ACK:
+    case TCP_STATE_CLOSING:
+      dbg_error(DBG_TCP, "tcp closed.");
+      return NET_ERR_CLOSE;
+    case TCP_STATE_CLOSE_WAIT:
+    case TCP_STATE_ESTABLISHED:
+      break;
+    case TCP_STATE_LISTEN:
+    case TCP_STATE_SYN_RECVD:
+    case TCP_STATE_SYN_SENT:
+    default:
+      dbg_error(DBG_TCP, "tcp state error");
+      return NET_ERR_STATE;
+  }
+
+  return NET_ERR_OK;
+}
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
       .connect = tcp_connect,
       .close = tcp_close,
+      .send = tcp_send,
   };
   tcp_t *tcp = tcp_get_free(wait);
   if (!tcp) {
