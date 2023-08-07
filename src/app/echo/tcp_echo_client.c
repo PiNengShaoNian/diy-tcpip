@@ -33,7 +33,7 @@ int tcp_echo_client_start(const char *ip, int port) {
 #endif
 
 #if 1
-  char sbuf[1024];
+  char sbuf[4096];
   for (int i = 0; i < sizeof(sbuf); i++) {
     sbuf[i] = 'a' + i % 26;
   }

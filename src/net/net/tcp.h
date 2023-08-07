@@ -9,6 +9,8 @@
 #include "sock.h"
 #include "tcp_buf.h"
 
+#define TCP_DEFAULT_MSS 536
+
 #define TCP_OPT_END 0
 #define TCP_OPT_NOP 1
 #define TCP_OPT_MSS 2

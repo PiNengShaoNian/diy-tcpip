@@ -110,6 +110,15 @@ static uint32_t tcp_get_iss(void) {
 }
 
 static tcp_init_connect(tcp_t *tcp) {
+  rentry_t *rt = rt_find(&tcp->base.remote_ip);
+  if (rt->netif->mtu == 0) {
+    tcp->mss = TCP_DEFAULT_MSS;
+  } else if (!ipaddr_is_any(&rt->next_hop)) {
+    tcp->mss = TCP_DEFAULT_MSS;
+  } else {
+    tcp->mss = rt->netif->mtu - sizeof(ipv4_hdr_t) - sizeof(tcp_hdr_t);
+  }
+
   tcp_buf_init(&tcp->snd.buf, tcp->snd.data, TCP_SBUF_SIZE);
   tcp->snd.iss = tcp_get_iss();
   tcp->snd.una = tcp->snd.nxt = tcp->snd.iss;

@@ -57,7 +57,9 @@ void tcp_read_options(tcp_t *tcp, tcp_hdr_t *tcp_hdr) {
         tcp_opt_mss_t *opt = (tcp_opt_mss_t *)opt_start;
         if (opt->length == 4) {
           uint16_t mss = x_ntohs(opt->mss);
-          tcp->mss = mss;
+          if (mss < tcp->mss) {
+            tcp->mss = mss;
+          }
         }
         opt_start += opt->length;
         break;
