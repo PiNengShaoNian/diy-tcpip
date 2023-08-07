@@ -131,3 +131,14 @@ net_err_t tcp_send_fin(tcp_t *tcp) {
   tcp_transmit(tcp);
   return NET_ERR_OK;
 }
+
+int tcp_write_sndbuf(tcp_t *tcp, const uint8_t *buf, int len) {
+  int free_cnt = tcp_buf_free_cout(&tcp->snd.buf);
+  if (free_cnt <= 0) {
+    return 0;
+  }
+
+  int wr_len = (len > free_cnt) ? free_cnt : len;
+  tcp_buf_write_send(&tcp->snd.buf, buf, wr_len);
+  return wr_len;
+}

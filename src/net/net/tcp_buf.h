@@ -20,4 +20,6 @@ static inline int tcp_buf_free_cout(tcp_buf_t *buf) {
   return buf->size - buf->count;
 }
 
+void tcp_buf_write_send(tcp_buf_t *buf, const uint8_t *buffer, int len);
+
 #endif

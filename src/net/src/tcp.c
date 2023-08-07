@@ -230,7 +230,14 @@ static net_err_t tcp_send(struct _sock_t *s, const void *buf, size_t len,
       return NET_ERR_STATE;
   }
 
-  return NET_ERR_OK;
+  int size = tcp_write_sndbuf(tcp, (uint8_t *)buf, (int)len);
+  if (size <= 0) {
+    *result_len = 0;
+    return NET_ERR_NEED_WAIT;
+  } else {
+    *result_len = size;
+    return NET_ERR_OK;
+  }
 }
 
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
