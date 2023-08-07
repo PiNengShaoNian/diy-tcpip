@@ -130,8 +130,18 @@ net_err_t tcp_ack_process(tcp_t *tcp, tcp_seg_t *seg) {
     tcp->flags.syn_out = 0;
   }
 
-  if (tcp->flags.fin_out && (tcp_hdr->ack - tcp->snd.una > 0)) {
-    tcp->flags.fin_out = 0;
+  int acked_cnt = tcp_hdr->ack - tcp->snd.una;
+  int unacked = tcp->snd.nxt - tcp->snd.una;
+  int curr_acked = acked_cnt > unacked ? unacked : acked_cnt;
+
+  tcp->snd.una += curr_acked;
+  if (curr_acked > 0) {
+    sock_wakeup(&tcp->base, SOCK_WAIT_WRITE, NET_ERR_OK);
+    curr_acked -= tcp_buf_remove(&tcp->snd.buf, curr_acked);
+
+    if (tcp->flags.fin_out && curr_acked) {
+      tcp->flags.fin_out = 0;
+    }
   }
 
   return NET_ERR_OK;
