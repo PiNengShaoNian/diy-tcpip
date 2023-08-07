@@ -120,6 +120,7 @@ static tcp_init_connect(tcp_t *tcp) {
   }
 
   tcp_buf_init(&tcp->snd.buf, tcp->snd.data, TCP_SBUF_SIZE);
+  tcp_buf_init(&tcp->rcv.buf, tcp->rcv.data, TCP_RBUF_SIZE);
   tcp->snd.iss = tcp_get_iss();
   tcp->snd.una = tcp->snd.nxt = tcp->snd.iss;
 

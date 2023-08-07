@@ -115,6 +115,7 @@ typedef struct _tcp_t {
   struct {
     tcp_buf_t buf;
     uint8_t data[TCP_SBUF_SIZE];
+
     uint32_t una;  // 第一个已发送未确认的序号
     uint32_t nxt;  // 第一个还未发送的序号
     uint32_t iss;  // 起始的发送序号
@@ -122,6 +123,9 @@ typedef struct _tcp_t {
   } snd;
 
   struct {
+    tcp_buf_t buf;
+    uint8_t data[TCP_RBUF_SIZE];
+
     uint32_t nxt;  // 当前待接收的最小序号
     uint32_t iss;  // 起始的接收序号
     sock_wait_t wait;
