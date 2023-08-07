@@ -46,7 +46,7 @@ int tcp_echo_client_start(const char *ip, int port) {
     }
   }
 
-  fgets(sbuf, sizeof(sbuf), stdin);
+  // fgets(sbuf, sizeof(sbuf), stdin);
   close(s);
   return 0;
 #endif

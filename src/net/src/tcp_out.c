@@ -85,6 +85,25 @@ static void get_send_info(tcp_t *tcp, int *doff, int *dlen) {
 }
 
 net_err_t tcp_transmit(tcp_t *tcp) {
+  int dlen, doff;
+  get_send_info(tcp, &doff, &dlen);
+  if (dlen < 0) {
+    return NET_ERR_OK;
+  }
+
+  int seq_len = dlen;
+  if (tcp->flags.syn_out) {
+    seq_len++;
+  }
+
+  if (tcp->flags.fin_out) {
+    seq_len++;
+  }
+
+  if (seq_len == 0) {
+    return NET_ERR_OK;
+  }
+
   pktbuf_t *buf = pktbuf_alloc(sizeof(tcp_hdr_t));
   if (!buf) {
     dbg_error(DBG_TCP, "no buffer");
@@ -100,16 +119,10 @@ net_err_t tcp_transmit(tcp_t *tcp) {
   hdr->flags = 0;
   hdr->f_syn = tcp->flags.syn_out;
   hdr->f_ack = tcp->flags.irs_valid;
-  hdr->f_fin = tcp->flags.fin_out;
+  hdr->f_fin = dlen == 0 ? tcp->flags.fin_out : 0;
   hdr->win = 1024;
   hdr->urgptr = 0;
   tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
-
-  int dlen, doff;
-  get_send_info(tcp, &doff, &dlen);
-  if (dlen < 0) {
-    return NET_ERR_OK;
-  }
 
   copy_send_data(tcp, buf, doff, dlen);
 
