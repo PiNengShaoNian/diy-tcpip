@@ -374,6 +374,8 @@ net_err_t test_func(func_msg_t *msg) {
   return NET_ERR_OK;
 }
 
+void download(const char *filename, int port);
+
 int main(int argc, char **argv) {
   dbg_info(DBG_TEST, "info");
   dbg_warning(DBG_TEST, "warning");
@@ -391,7 +393,9 @@ int main(int argc, char **argv) {
 
   // udp_echo_client_start(friend0_ip, 1000);
   // udp_echo_server_start(2000);
-  tcp_echo_client_start(friend0_ip, 1000);
+  // tcp_echo_client_start(friend0_ip, 1000);
+
+  download("hello.txt", 1000);
 
   ping_t p;
   char cmd[32], param[32];
