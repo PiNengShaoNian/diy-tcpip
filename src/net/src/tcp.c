@@ -236,6 +236,8 @@ static net_err_t tcp_send(struct _sock_t *s, const void *buf, size_t len,
     return NET_ERR_NEED_WAIT;
   } else {
     *result_len = size;
+
+    tcp_transmit(tcp);
     return NET_ERR_OK;
   }
 }

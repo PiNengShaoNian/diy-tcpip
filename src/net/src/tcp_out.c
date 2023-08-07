@@ -58,6 +58,30 @@ net_err_t tcp_send_reset(tcp_seg_t *seg) {
   return send_out(out, buf, &seg->remote_ip, &seg->local_ip);
 }
 
+static int copy_send_data(tcp_t *tcp, pktbuf_t *buf, int doff, int dlen) {
+  if (dlen == 0) {
+    return 0;
+  }
+
+  net_err_t err = pktbuf_resize(buf, (int)buf->total_size + dlen);
+  if (err < 0) {
+    dbg_error(DBG_TCP, "pktbuf resize error");
+    return -1;
+  }
+
+  int hdr_size = tcp_hdr_size((tcp_hdr_t *)pktbuf_data(buf));
+  pktbuf_reset_acc(buf);
+  pktbuf_seek(buf, hdr_size);
+
+  tcp_buf_read_send(&tcp->snd.buf, doff, buf, dlen);
+  return dlen;
+}
+
+static void get_send_info(tcp_t *tcp, int *doff, int *dlen) {
+  *doff = tcp->snd.nxt - tcp->snd.una;
+  *dlen = tcp_buf_cnt(&tcp->snd.buf) - *doff;
+}
+
 net_err_t tcp_transmit(tcp_t *tcp) {
   pktbuf_t *buf = pktbuf_alloc(sizeof(tcp_hdr_t));
   if (!buf) {
@@ -78,7 +102,16 @@ net_err_t tcp_transmit(tcp_t *tcp) {
   hdr->win = 1024;
   hdr->urgptr = 0;
   tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
-  tcp->snd.nxt += hdr->f_syn + hdr->f_fin;
+
+  int dlen, doff;
+  get_send_info(tcp, &doff, &dlen);
+  if (dlen < 0) {
+    return NET_ERR_OK;
+  }
+
+  copy_send_data(tcp, buf, doff, dlen);
+
+  tcp->snd.nxt += hdr->f_syn + hdr->f_fin + dlen;
 
   return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
 }
