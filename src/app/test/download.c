@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "net_api.h"
 #include "net_plat.h"
 
 void download(const char *filename, int port) {
   printf("try to download %s from %s: %d\n", filename, friend0_ip, port);
-  SOCKET sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
   if (sockfd < 0) {
     printf("create socket failed.");
@@ -45,13 +46,13 @@ void download(const char *filename, int port) {
 
   printf("rcv file size: %d\n", (int)total_size);
   printf("rcv file ok.\n");
-  closesocket(sockfd);
+  close(sockfd);
   fclose(file);
   return;
 
 failed:
   if (sockfd) {
-    closesocket(sockfd);
+    close(sockfd);
   }
   if (file) {
     fclose(file);
