@@ -9,7 +9,17 @@
 #include "sock.h"
 #include "tcp_buf.h"
 
+#define TCP_OPT_END 0
+#define TCP_OPT_NOP 1
+#define TCP_OPT_MSS 2
+
 #pragma pack(1)
+typedef struct _tcp_opt_mss_t {
+  uint8_t kind;
+  uint8_t length;
+  uint16_t mss;
+} tcp_opt_mss_t;
+
 typedef struct _tcp_hdr_t {
   uint16_t sport;
   uint16_t dport;
@@ -94,6 +104,7 @@ typedef struct _tcp_t {
   } flags;
 
   tcp_state_t state;
+  int mss;
 
   struct {
     sock_wait_t wait;
@@ -128,6 +139,9 @@ void tcp_show_list(void);
 net_err_t tcp_init(void);
 sock_t *tcp_create(int family, int protocol);
 net_err_t tcp_abort(tcp_t *tcp, net_err_t err);
+
+void tcp_read_options(tcp_t *tcp, tcp_hdr_t *tcp_hdr);
+
 tcp_t *tcp_find(ipaddr_t *local_ip, uint16_t local_port, ipaddr_t *remote_ip,
                 uint16_t remote_port);
 static inline int tcp_hdr_size(tcp_hdr_t *hdr) { return hdr->shdr * 4; }

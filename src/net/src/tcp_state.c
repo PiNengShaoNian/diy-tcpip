@@ -2,6 +2,7 @@
 
 #include "tcp_in.h"
 #include "tcp_out.h"
+#include "tools.h"
 
 const char *tcp_state_name(tcp_state_t state) {
   static const char *state_name[] = {
@@ -42,6 +43,37 @@ net_err_t tcp_closed_in(tcp_t *tcp, tcp_seg_t *seg) {
 
 net_err_t tcp_listen_in(tcp_t *tcp, tcp_seg_t *seg) { return NET_ERR_OK; }
 
+void tcp_read_options(tcp_t *tcp, tcp_hdr_t *tcp_hdr) {
+  uint8_t *opt_start = (uint8_t *)tcp_hdr + sizeof(tcp_hdr_t);
+  uint8_t *opt_end = opt_start + (tcp_hdr_size(tcp_hdr) - sizeof(tcp_hdr_t));
+
+  if (opt_end <= opt_start) {
+    return;
+  }
+
+  while (opt_start < opt_end) {
+    switch (opt_start[0]) {
+      case TCP_OPT_MSS: {
+        tcp_opt_mss_t *opt = (tcp_opt_mss_t *)opt_start;
+        if (opt->length == 4) {
+          uint16_t mss = x_ntohs(opt->mss);
+          tcp->mss = mss;
+        }
+        opt_start += opt->length;
+        break;
+        case TCP_OPT_NOP:
+          opt_start++;
+          break;
+        case TCP_OPT_END:
+          return;
+        default:
+          opt_start++;
+          break;
+      }
+    }
+  }
+}
+
 net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg) {
   tcp_hdr_t *tcp_hdr = seg->hdr;
 
@@ -66,6 +98,7 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg) {
     tcp->rcv.nxt = tcp_hdr->seq + 1;
     tcp->flags.irs_valid = 1;
 
+    tcp_read_options(tcp, tcp_hdr);
     if (tcp_hdr->f_ack) {
       tcp_ack_process(tcp, seg);
     }
