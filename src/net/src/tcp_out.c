@@ -140,7 +140,7 @@ net_err_t tcp_transmit(tcp_t *tcp) {
   hdr->f_syn = tcp->flags.syn_out;
   hdr->f_ack = tcp->flags.irs_valid;
   hdr->f_fin = dlen == 0 ? tcp->flags.fin_out : 0;
-  hdr->win = 1024;
+  hdr->win = tcp_rcv_window(tcp);
   hdr->urgptr = 0;
 
   if (hdr->f_syn) {
@@ -201,7 +201,7 @@ net_err_t tcp_send_ack(tcp_t *tcp, tcp_seg_t *seg) {
   hdr->ack = tcp->rcv.nxt;
   hdr->flags = 0;
   hdr->f_ack = 1;
-  hdr->win = 1024;
+  hdr->win = tcp_rcv_window(tcp);
   hdr->urgptr = 0;
   tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 

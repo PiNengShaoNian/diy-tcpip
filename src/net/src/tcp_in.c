@@ -33,6 +33,11 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
       [TCP_STATE_LAST_ACK] = tcp_last_ack_in,
   };
 
+  if (pktbuf_set_cont(buf, sizeof(tcp_hdr_t)) < 0) {
+    dbg_error(DBG_TCP, "set cond failed.");
+    return NET_ERR_NONE;
+  }
+
   tcp_hdr_t *tcp_hdr = (tcp_hdr_t *)pktbuf_data(buf);
   if (tcp_hdr->checksum) {
     pktbuf_reset_acc(buf);

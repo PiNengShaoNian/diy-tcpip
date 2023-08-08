@@ -154,4 +154,5 @@ static inline int tcp_hdr_size(tcp_hdr_t *hdr) { return hdr->shdr * 4; }
 static inline void tcp_set_hdr_size(tcp_hdr_t *hdr, int size) {
   hdr->shdr = size / 4;
 }
+int tcp_rcv_window(tcp_t *tcp);
 #endif
