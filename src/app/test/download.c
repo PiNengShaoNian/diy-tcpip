@@ -30,6 +30,19 @@ void download(const char *filename, int port) {
     goto failed;
   }
 
+  int keepalive = 1;
+  int keepidle = 5;
+  int keep_interval = 1;
+  int keepcount = 10;
+  setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, (void *)&keepalive,
+             sizeof(keepalive));
+  setsockopt(sockfd, SOL_TCP, TCP_KEEPIDLE, (void *)&keepidle,
+             sizeof(keepidle));
+  setsockopt(sockfd, SOL_TCP, TCP_KEEPINTVL, (void *)&keep_interval,
+             sizeof(keep_interval));
+  setsockopt(sockfd, SOL_TCP, TCP_KEEPCNT, (void *)&keepcount,
+             sizeof(keepcount));
+
   char buf[8192];
   int rcv_size;
   ssize_t total_size = 0;
@@ -39,7 +52,6 @@ void download(const char *filename, int port) {
     total_size += rcv_size;
   }
 
-//   recv(sockfd, buf, sizeof(buf), 0);
   if (rcv_size < 0) {
     printf("rcv file size: %d\n", (int)total_size);
     goto failed;
