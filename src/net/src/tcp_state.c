@@ -143,7 +143,7 @@ net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg) {
 
   tcp_transmit(tcp);
 
-  if (tcp_hdr->f_fin) {
+  if (tcp->flags.fin_in) {
     tcp_set_state(tcp, TCP_STATE_CLOSE_WAIT);
   }
 
@@ -176,12 +176,12 @@ net_err_t tcp_fin_wait_1_in(tcp_t *tcp, tcp_seg_t *seg) {
   tcp_transmit(tcp);
 
   if (tcp->flags.fin_out == 0) {
-    if (tcp_hdr->f_fin) {
+    if (tcp->flags.fin_in) {
       tcp_time_wait(tcp);
     } else {
       tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
     }
-  } else if (tcp_hdr->f_fin) {
+  } else if (tcp->flags.fin_in) {
     tcp_set_state(tcp, TCP_STATE_CLOSING);
   }
 
@@ -209,7 +209,7 @@ net_err_t tcp_fin_wait_2_in(tcp_t *tcp, tcp_seg_t *seg) {
 
   tcp_data_in(tcp, seg);
 
-  if (tcp_hdr->f_fin) {
+  if (tcp->flags.fin_in) {
     tcp_time_wait(tcp);
   }
 
@@ -263,7 +263,7 @@ net_err_t tcp_time_wait_in(tcp_t *tcp, tcp_seg_t *seg) {
     return NET_ERR_UNREACH;
   }
 
-  if (tcp_hdr->f_fin) {
+  if (tcp->flags.fin_in) {
     tcp_send_ack(tcp, seg);
     tcp_time_wait(tcp);
   }

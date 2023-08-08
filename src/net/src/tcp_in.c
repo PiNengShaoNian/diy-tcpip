@@ -154,13 +154,14 @@ net_err_t tcp_data_in(tcp_t *tcp, tcp_seg_t *seg) {
   }
 
   tcp_hdr_t *tcp_hdr = seg->hdr;
-  if (tcp_hdr->f_fin) {
+  if (tcp_hdr->f_fin && (tcp->rcv.nxt == seg->seq)) {
+    tcp->flags.fin_in = 1;
     tcp->rcv.nxt++;
     wakeup++;
   }
 
   if (wakeup) {
-    if (tcp_hdr->f_fin) {
+    if (tcp->flags.fin_in) {
       sock_wakeup(&tcp->base, SOCK_WAIT_ALL, NET_ERR_CLOSE);
     } else {
       sock_wakeup(&tcp->base, SOCK_WAIT_READ, NET_ERR_OK);

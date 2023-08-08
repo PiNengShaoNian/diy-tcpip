@@ -100,7 +100,8 @@ typedef struct _tcp_t {
   sock_t base;
 
   struct {
-    uint32_t syn_out : 1;    // 是否是初次连接时发出的syn包
+    uint32_t syn_out : 1;  // 是否是初次连接时发出的syn包
+    uint32_t fin_in : 1;  // 指示当前是否接收到了一个合法的fin包
     uint32_t fin_out : 1;    // 指示是否是发送fin包
     uint32_t irs_valid : 1;  // 是否已经与对方建立连接
   } flags;
