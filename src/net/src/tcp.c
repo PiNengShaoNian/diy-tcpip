@@ -264,6 +264,9 @@ net_err_t tcp_recv(struct _sock_t *sock, void *buf, size_t len, int flags,
       return NET_ERR_CLOSE;
     case TCP_STATE_CLOSE_WAIT:
     case TCP_STATE_CLOSING:
+      if (tcp_buf_cnt(&tcp->rcv.buf) == 0) {
+        return NET_ERR_CLOSE;
+      }
       need_wait = NET_ERR_OK;
       break;
     case TCP_STATE_FIN_WAIT_1:
@@ -472,9 +475,11 @@ void tcp_alive_tmo(net_timer_t *timer, void *arg) {
     net_timer_remove(&tcp->conn.keep_timer);
     net_timer_add(&tcp->conn.keep_timer, "keepalive", tcp_alive_tmo, tcp,
                   tcp->conn.keep_intvl * 1000, 0);
+    tcp_send_keepalive(tcp);
     dbg_info(DBG_TCP, "tcp alive tmo, retry: %d", tcp->conn.keep_retry);
   } else {
-    tcp_abort(tcp, NET_ERR_TMO);
+    tcp_send_reset_for_tcp(tcp);
+    tcp_abort(tcp, NET_ERR_CLOSE);
     dbg_error(DBG_TCP, "tcp alive tmo, give up");
   }
 }

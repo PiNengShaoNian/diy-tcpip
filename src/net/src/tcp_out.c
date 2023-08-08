@@ -231,3 +231,48 @@ int tcp_write_sndbuf(tcp_t *tcp, const uint8_t *buf, int len) {
   tcp_buf_write_send(&tcp->snd.buf, buf, wr_len);
   return wr_len;
 }
+
+net_err_t tcp_send_keepalive(tcp_t *tcp) {
+  pktbuf_t *buf = pktbuf_alloc(sizeof(tcp_hdr_t));
+  if (!buf) {
+    dbg_warning(DBG_TCP, "no pktbuf");
+    return NET_ERR_NONE;
+  }
+
+  tcp_hdr_t *out = (tcp_hdr_t *)pktbuf_data(buf);
+  out->sport = tcp->base.local_port;
+  out->dport = tcp->base.remote_port;
+  out->seq = tcp->snd.nxt - 1;
+  out->ack = tcp->rcv.nxt;
+  out->flags = 0;
+  out->f_ack = 1;
+  out->win = tcp_rcv_window(tcp);
+  out->urgptr = 0;
+
+  tcp_set_hdr_size(out, sizeof(tcp_hdr_t));
+
+  return send_out(out, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
+}
+
+net_err_t tcp_send_reset_for_tcp(tcp_t *tcp) {
+  pktbuf_t *buf = pktbuf_alloc(sizeof(tcp_hdr_t));
+  if (!buf) {
+    dbg_warning(DBG_TCP, "no pktbuf");
+    return NET_ERR_NONE;
+  }
+
+  tcp_hdr_t *out = (tcp_hdr_t *)pktbuf_data(buf);
+  out->sport = tcp->base.local_port;
+  out->dport = tcp->base.remote_port;
+  out->seq = tcp->snd.nxt;
+  out->ack = tcp->rcv.nxt;
+  out->flags = 0;
+  out->f_rst = 1;
+  out->f_ack = 1;
+  out->win = tcp_rcv_window(tcp);
+  out->urgptr = 0;
+
+  tcp_set_hdr_size(out, sizeof(tcp_hdr_t));
+
+  return send_out(out, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
+}

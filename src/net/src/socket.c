@@ -182,7 +182,7 @@ ssize_t x_recv(int s, const void* buf, size_t len, int flags) {
     }
 
     if (err == NET_ERR_CLOSE) {
-      dbg_info(DBG_SOCKET, "remote close");
+      dbg_info(DBG_SOCKET, "connection close");
       return 0;
     } else if (err < 0) {
       dbg_error(DBG_SOCKET, "recv failed.");

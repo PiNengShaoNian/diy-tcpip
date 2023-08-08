@@ -52,6 +52,7 @@ void download(const char *filename, int port) {
     total_size += rcv_size;
   }
 
+  recv(sockfd, buf, sizeof(buf), 0);
   if (rcv_size < 0) {
     printf("rcv file size: %d\n", (int)total_size);
     goto failed;
