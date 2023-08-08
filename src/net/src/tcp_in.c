@@ -89,6 +89,7 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   tcp_state_proc[tcp->state](tcp, &seg);
   tcp_show_info("after tcp in", tcp);
 
+  pktbuf_free(buf);
   return NET_ERR_OK;
 }
 

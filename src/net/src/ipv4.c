@@ -436,11 +436,9 @@ static net_err_t ip_normal_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
         dbg_warning(DBG_IP, "raw in error");
         return err;
       }
-      break;
+      return NET_ERR_OK;
     }
   }
-
-  return NET_ERR_UNREACH;
 }
 
 static net_err_t ip_frag_in(netif_t *netif, pktbuf_t *buf, ipaddr_t *src_ip,
