@@ -25,6 +25,7 @@ static inline int tcp_buf_free_cout(tcp_buf_t *buf) {
 void tcp_buf_write_send(tcp_buf_t *buf, const uint8_t *buffer, int len);
 void tcp_buf_read_send(tcp_buf_t *buf, int offset, pktbuf_t *dest, int count);
 int tcp_buf_write_rcv(tcp_buf_t *dest, int offset, pktbuf_t *src, int total);
+int tcp_buf_read_rcv(tcp_buf_t *buf, uint8_t *dest, int count);
 int tcp_buf_remove(tcp_buf_t *buf, int cnt);
 
 #endif
