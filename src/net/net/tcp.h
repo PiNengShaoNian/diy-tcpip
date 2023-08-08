@@ -8,6 +8,7 @@
 #include "pktbuf.h"
 #include "sock.h"
 #include "tcp_buf.h"
+#include "timer.h"
 
 #define TCP_DEFAULT_MSS 536
 
@@ -102,8 +103,9 @@ typedef struct _tcp_t {
   struct {
     uint32_t syn_out : 1;  // 是否是初次连接时发出的syn包
     uint32_t fin_in : 1;  // 指示当前是否接收到了一个合法的fin包
-    uint32_t fin_out : 1;    // 指示是否是发送fin包
-    uint32_t irs_valid : 1;  // 是否已经与对方建立连接
+    uint32_t fin_out : 1;      // 指示是否是发送fin包
+    uint32_t irs_valid : 1;    // 是否已经与对方建立连接
+    uint32_t keep_enable : 1;  // 是否开启保活机制
   } flags;
 
   tcp_state_t state;
@@ -111,6 +113,12 @@ typedef struct _tcp_t {
 
   struct {
     sock_wait_t wait;
+
+    int keep_idle;
+    int keep_intvl;
+    int keep_cnt;
+    int keep_retry;
+    net_timer_t keep_timer;
   } conn;
 
   struct {

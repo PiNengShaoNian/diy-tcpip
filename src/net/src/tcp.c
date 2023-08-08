@@ -290,6 +290,58 @@ net_err_t tcp_recv(struct _sock_t *sock, void *buf, size_t len, int flags,
 
 net_err_t tcp_setopt(struct _sock_t *s, int level, int optname,
                      const char *optval, int optlen) {
+  net_err_t err = sock_setopt(s, level, optname, optval, optlen);
+  if (err == NET_ERR_OK) {
+    return NET_ERR_OK;
+  } else if ((err < 0) && (err != NET_ERR_UNKNOWN)) {
+    return err;
+  }
+
+  tcp_t *tcp = (tcp_t *)s;
+
+  if (level == SOL_SOCKET) {
+    if (optname == SO_KEEPALIVE) {
+      if (optlen != sizeof(int)) {
+        dbg_error(DBG_TCP, "param size error");
+        return NET_ERR_PARAM;
+      }
+      tcp->flags.keep_enable = *(int *)optval;
+      return NET_ERR_OK;
+    }
+
+    return NET_ERR_PARAM;
+  } else if (level == SOL_TCP) {
+    switch (optname) {
+      case TCP_KEEPIDLE: {
+        if (optlen != sizeof(int)) {
+          dbg_error(DBG_TCP, "param size error");
+          return NET_ERR_PARAM;
+        }
+        tcp->conn.keep_idle = *(int *)optval;
+        break;
+      }
+      case TCP_KEEPINTVL: {
+        if (optlen != sizeof(int)) {
+          dbg_error(DBG_TCP, "param size error");
+          return NET_ERR_PARAM;
+        }
+        tcp->conn.keep_intvl = *(int *)optval;
+        break;
+      }
+      case TCP_KEEPCNT: {
+        if (optlen != sizeof(int)) {
+          dbg_error(DBG_TCP, "param size error");
+          return NET_ERR_PARAM;
+        }
+        tcp->conn.keep_cnt = *(int *)optval;
+        break;
+      }
+      default:
+        dbg_error(DBG_TCP, "unknown param");
+        return NET_ERR_PARAM;
+    }
+  }
+
   return NET_ERR_OK;
 }
 
@@ -317,6 +369,11 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   }
 
   tcp->state = TCP_STATE_CLOSED;
+  tcp->flags.keep_enable = 0;
+  tcp->conn.keep_idle = TCP_KEEPALIVE_TIME;
+  tcp->conn.keep_intvl = TCP_KEEPALIVE_INTVL;
+  tcp->conn.keep_cnt = TCP_KEEPALIVE_PROBES;
+  tcp->conn.keep_retry = TCP_KEEPALIVE_PROBES;
 
   if (sock_wait_init(&tcp->conn.wait) < 0) {
     dbg_error(DBG_TCP, "create conn.wait failed.");
