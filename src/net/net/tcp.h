@@ -169,4 +169,8 @@ int tcp_rcv_window(tcp_t *tcp);
 
 #define TCP_SEG_LT(a, b) (((int32_t)(a) - (int32_t)(b)) < 0)
 
+void tcp_kill_all_timers(tcp_t *tcp);
+void tcp_keepalive_start(tcp_t *tcp, int run);
+void tcp_keepalive_restart(tcp_t *tcp);
+
 #endif

@@ -110,6 +110,8 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
     return NET_ERR_OK;
   }
 
+  tcp_keepalive_restart(tcp);
+
   net_err_t err = pktbuf_seek(buf, tcp_hdr_size(tcp_hdr));
   if (err < 0) {
     dbg_error(DBG_TCP, "seek failed.");

@@ -305,7 +305,7 @@ net_err_t tcp_setopt(struct _sock_t *s, int level, int optname,
         dbg_error(DBG_TCP, "param size error");
         return NET_ERR_PARAM;
       }
-      tcp->flags.keep_enable = *(int *)optval;
+      tcp_keepalive_start(tcp, *(int *)optval);
       return NET_ERR_OK;
     }
 
@@ -318,6 +318,7 @@ net_err_t tcp_setopt(struct _sock_t *s, int level, int optname,
           return NET_ERR_PARAM;
         }
         tcp->conn.keep_idle = *(int *)optval;
+        tcp_keepalive_restart(tcp);
         break;
       }
       case TCP_KEEPINTVL: {
@@ -326,6 +327,7 @@ net_err_t tcp_setopt(struct _sock_t *s, int level, int optname,
           return NET_ERR_PARAM;
         }
         tcp->conn.keep_intvl = *(int *)optval;
+        tcp_keepalive_restart(tcp);
         break;
       }
       case TCP_KEEPCNT: {
@@ -334,6 +336,7 @@ net_err_t tcp_setopt(struct _sock_t *s, int level, int optname,
           return NET_ERR_PARAM;
         }
         tcp->conn.keep_cnt = *(int *)optval;
+        tcp_keepalive_restart(tcp);
         break;
       }
       default:
@@ -373,7 +376,7 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   tcp->conn.keep_idle = TCP_KEEPALIVE_TIME;
   tcp->conn.keep_intvl = TCP_KEEPALIVE_INTVL;
   tcp->conn.keep_cnt = TCP_KEEPALIVE_PROBES;
-  tcp->conn.keep_retry = TCP_KEEPALIVE_PROBES;
+  tcp->conn.keep_retry = 0;
 
   if (sock_wait_init(&tcp->conn.wait) < 0) {
     dbg_error(DBG_TCP, "create conn.wait failed.");
@@ -447,6 +450,7 @@ tcp_t *tcp_find(ipaddr_t *local_ip, uint16_t local_port, ipaddr_t *remote_ip,
 }
 
 net_err_t tcp_abort(tcp_t *tcp, net_err_t err) {
+  tcp_kill_all_timers(tcp);
   tcp_set_state(tcp, TCP_STATE_CLOSED);
   sock_wakeup(&tcp->base, SOCK_WAIT_ALL, err);
   return NET_ERR_OK;
@@ -455,4 +459,44 @@ net_err_t tcp_abort(tcp_t *tcp, net_err_t err) {
 int tcp_rcv_window(tcp_t *tcp) {
   int windows = tcp_buf_free_cout(&tcp->rcv.buf);
   return windows;
+}
+
+void tcp_kill_all_timers(tcp_t *tcp) {
+  net_timer_remove(&tcp->conn.keep_timer);
+}
+
+void tcp_alive_tmo(net_timer_t *timer, void *arg) {
+  tcp_t *tcp = (tcp_t *)arg;
+
+  if (++tcp->conn.keep_retry <= tcp->conn.keep_cnt) {
+    net_timer_remove(&tcp->conn.keep_timer);
+    net_timer_add(&tcp->conn.keep_timer, "keepalive", tcp_alive_tmo, tcp,
+                  tcp->conn.keep_intvl * 1000, 0);
+    dbg_info(DBG_TCP, "tcp alive tmo, retry: %d", tcp->conn.keep_retry);
+  } else {
+    tcp_abort(tcp, NET_ERR_TMO);
+    dbg_error(DBG_TCP, "tcp alive tmo, give up");
+  }
+}
+
+static void keepalive_start_timer(tcp_t *tcp) {
+  net_timer_add(&tcp->conn.keep_timer, "keepalive", tcp_alive_tmo, tcp,
+                tcp->conn.keep_idle * 1000, 0);
+}
+
+void tcp_keepalive_start(tcp_t *tcp, int run) {
+  if (tcp->flags.keep_enable && !run) {
+    net_timer_remove(&tcp->conn.keep_timer);
+  } else if (run && !tcp->flags.keep_enable) {
+    keepalive_start_timer(tcp);
+  }
+  tcp->flags.keep_enable = run;
+}
+
+void tcp_keepalive_restart(tcp_t *tcp) {
+  if (tcp->flags.keep_enable) {
+    net_timer_remove(&tcp->conn.keep_timer);
+    keepalive_start_timer(tcp);
+    tcp->conn.keep_retry = 0;
+  }
 }
