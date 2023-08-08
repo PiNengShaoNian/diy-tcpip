@@ -136,9 +136,13 @@ ssize_t x_recvfrom(int s, const void* buf, size_t len, int flags,
       return (ssize_t)req.data.comp_len;
     }
 
-    err = sock_wait_enter(req.wait, req.wait_tmo);
-
-    if (err < 0) {
+    if (req.wait) {
+      err = sock_wait_enter(req.wait, req.wait_tmo);
+    }
+    if (err == NET_ERR_CLOSE) {
+      dbg_info(DBG_SOCKET, "remote close");
+      return 0;
+    } else if (err < 0) {
       dbg_error(DBG_SOCKET, "recv failed.");
       return -1;
     }
@@ -173,9 +177,14 @@ ssize_t x_recv(int s, const void* buf, size_t len, int flags) {
       return (ssize_t)req.data.comp_len;
     }
 
-    err = sock_wait_enter(req.wait, req.wait_tmo);
+    if (req.wait) {
+      err = sock_wait_enter(req.wait, req.wait_tmo);
+    }
 
-    if (err < 0) {
+    if (err == NET_ERR_CLOSE) {
+      dbg_info(DBG_SOCKET, "remote close");
+      return 0;
+    } else if (err < 0) {
       dbg_error(DBG_SOCKET, "recv failed.");
       return -1;
     }
