@@ -155,4 +155,9 @@ static inline void tcp_set_hdr_size(tcp_hdr_t *hdr, int size) {
   hdr->shdr = size / 4;
 }
 int tcp_rcv_window(tcp_t *tcp);
+
+#define TCP_SEG_LE(a, b) (((int32_t)(a) - (int32_t)(b)) <= 0)
+
+#define TCP_SEG_LT(a, b) (((int32_t)(a) - (int32_t)(b)) < 0)
+
 #endif

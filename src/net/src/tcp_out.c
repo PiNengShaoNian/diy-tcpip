@@ -164,6 +164,13 @@ net_err_t tcp_send_syn(tcp_t *tcp) {
 net_err_t tcp_ack_process(tcp_t *tcp, tcp_seg_t *seg) {
   tcp_hdr_t *tcp_hdr = seg->hdr;
 
+  // snd.una < ack <= snd.nxt
+  if (TCP_SEG_LE(tcp_hdr->ack, tcp->snd.una)) {
+    return NET_ERR_OK;
+  } else if (TCP_SEG_LT(tcp->snd.nxt, tcp_hdr->ack)) {
+    return NET_ERR_UNREACH;
+  }
+
   if (tcp->flags.syn_out) {
     tcp->snd.una++;
     tcp->flags.syn_out = 0;

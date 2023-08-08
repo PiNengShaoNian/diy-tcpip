@@ -18,6 +18,30 @@ void tcp_seg_init(tcp_seg_t *seg, pktbuf_t *buf, ipaddr_t *local,
   seg->seq_len = seg->data_len + seg->hdr->f_syn + seg->hdr->f_fin;
 }
 
+static int tcp_seq_acceptable(tcp_t *tcp, tcp_seg_t *seg) {
+  uint32_t rcv_win = tcp_rcv_window(tcp);
+  if (seg->seq_len == 0) {
+    if (rcv_win == 0) {
+      return seg->seq == tcp->rcv.nxt;
+    } else {
+      int v = TCP_SEG_LE(tcp->rcv.nxt, seg->seq) &&
+              TCP_SEG_LT(seg->seq, tcp->rcv.nxt + rcv_win);
+      return v;
+    }
+  } else {
+    if (rcv_win == 0) {
+      return 0;
+    } else {
+      int v = TCP_SEG_LE(tcp->rcv.nxt, seg->seq) &&
+              TCP_SEG_LT(seg->seq, tcp->rcv.nxt + rcv_win);
+      uint32_t slast = seg->seq + seg->seq_len - 1;
+      v |= TCP_SEG_LE(tcp->rcv.nxt, slast) &&
+           TCP_SEG_LT(slast, tcp->rcv.nxt + rcv_win);
+      return v;
+    }
+  }
+}
+
 net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   static const tcp_proc_t tcp_state_proc[] = {
       [TCP_STATE_CLOSED] = tcp_closed_in,
@@ -91,9 +115,19 @@ net_err_t tcp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
     dbg_error(DBG_TCP, "seek failed.");
     return NET_ERR_SIZE;
   }
+
+  if (tcp->state != TCP_STATE_CLOSED && tcp->state != TCP_STATE_SYN_SENT &&
+      tcp->state != TCP_STATE_LISTEN) {
+    if (!tcp_seq_acceptable(tcp, &seg)) {
+      dbg_info(DBG_TCP, "seq error");
+      goto seg_drop;
+    }
+  }
+
   tcp_state_proc[tcp->state](tcp, &seg);
   tcp_show_info("after tcp in", tcp);
 
+seg_drop:
   pktbuf_free(buf);
   return NET_ERR_OK;
 }
