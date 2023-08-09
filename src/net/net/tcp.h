@@ -177,5 +177,6 @@ void tcp_keepalive_restart(tcp_t *tcp);
 
 int tcp_backlog_count(tcp_t *tcp);
 tcp_t *tcp_create_child(tcp_t *tcp, tcp_seg_t *seg);
+void tcp_free(tcp_t *tcp);
 
 #endif
