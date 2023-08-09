@@ -459,6 +459,45 @@ net_err_t tcp_accept(struct _sock_t *s, struct x_sockaddr *addr,
   return NET_ERR_NEED_WAIT;
 }
 
+int tcp_backlog_count(tcp_t *tcp) {
+  int count = 0;
+
+  nlist_node_t *node;
+  nlist_for_each(node, &tcp_list) {
+    tcp_t *child = (tcp_t *)nlist_entry(node, sock_t, node);
+    if (child->parent == tcp && child->flags.inactive) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+static tcp_t *tcp_alloc(int wait, int family, int protocol);
+static void tcp_insert(tcp_t *tcp);
+tcp_t *tcp_create_child(tcp_t *tcp, tcp_seg_t *seg) {
+  tcp_t *child = (tcp_t *)tcp_alloc(0, tcp->base.family, tcp->base.protocol);
+  if (!child) {
+    dbg_error(DBG_TCP, "no child tcp");
+    return (tcp_t *)0;
+  }
+  tcp_insert(child);
+  ipaddr_copy(&child->base.local_ip, &seg->local_ip);
+  ipaddr_copy(&child->base.remote_ip, &seg->remote_ip);
+  child->base.local_port = seg->hdr->dport;
+  child->base.remote_port = seg->hdr->sport;
+  child->parent = tcp;
+  child->flags.irs_valid = 1;
+  child->flags.inactive = 1;
+
+  tcp_init_connect(child);
+  child->rcv.iss = seg->seq;
+  child->rcv.nxt = child->rcv.iss + 1;
+  tcp_read_options(child, seg->hdr);
+
+  return child;
+}
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
       .connect = tcp_connect,

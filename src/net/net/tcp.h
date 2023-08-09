@@ -103,8 +103,8 @@ typedef struct _tcp_t {
   struct {
     uint32_t syn_out : 1;  // 是否是初次连接时发出的syn包
     uint32_t fin_in : 1;  // 指示当前是否接收到了一个合法的fin包
-    uint32_t fin_out : 1;      // 指示是否是发送fin包
-    uint32_t irs_valid : 1;    // 是否已经与对方建立连接
+    uint32_t fin_out : 1;  // 指示是否是发送fin包
+    uint32_t irs_valid : 1;  // 是否已经与对方建立连接(收到过对方的序号)
     uint32_t keep_enable : 1;  // 是否开启保活机制
     uint32_t inactive : 1;     // 是否处于accepted的状态
   } flags;
@@ -174,5 +174,8 @@ int tcp_rcv_window(tcp_t *tcp);
 void tcp_kill_all_timers(tcp_t *tcp);
 void tcp_keepalive_start(tcp_t *tcp, int run);
 void tcp_keepalive_restart(tcp_t *tcp);
+
+int tcp_backlog_count(tcp_t *tcp);
+tcp_t *tcp_create_child(tcp_t *tcp, tcp_seg_t *seg);
 
 #endif

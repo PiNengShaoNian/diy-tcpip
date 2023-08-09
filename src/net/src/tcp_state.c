@@ -41,7 +41,38 @@ net_err_t tcp_closed_in(tcp_t *tcp, tcp_seg_t *seg) {
   return NET_ERR_OK;
 }
 
-net_err_t tcp_listen_in(tcp_t *tcp, tcp_seg_t *seg) { return NET_ERR_OK; }
+net_err_t tcp_listen_in(tcp_t *tcp, tcp_seg_t *seg) {
+  tcp_hdr_t *tcp_hdr = seg->hdr;
+
+  if (tcp_hdr->f_rst) {
+    return NET_ERR_OK;
+  }
+
+  if (tcp_hdr->f_ack) {
+    tcp_send_reset(seg);
+    return NET_ERR_OK;
+  }
+
+  if (tcp_hdr->f_syn) {
+    if (tcp_backlog_count(tcp) >= tcp->conn.backlog) {
+      dbg_warning(DBG_TCP, "queue full");
+      return NET_ERR_FULL;
+    }
+
+    tcp_t *child = tcp_create_child(tcp, seg);
+    if (child == (tcp_t *)0) {
+      dbg_error(DBG_TCP, "no tcp");
+      return NET_ERR_MEM;
+    }
+
+    tcp_send_syn(child);
+    tcp_set_state(child, TCP_STATE_SYN_RECVD);
+
+    return NET_ERR_OK;
+  }
+
+  return NET_ERR_UNKNOWN;
+}
 
 void tcp_read_options(tcp_t *tcp, tcp_hdr_t *tcp_hdr) {
   uint8_t *opt_start = (uint8_t *)tcp_hdr + sizeof(tcp_hdr_t);
