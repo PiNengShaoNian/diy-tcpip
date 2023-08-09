@@ -597,6 +597,15 @@ tcp_t *tcp_find(ipaddr_t *local_ip, uint16_t local_port, ipaddr_t *remote_ip,
         return (tcp_t *)s;
       }
     }
+
+    tcp_t *tcp = (tcp_t *)s;
+    if (tcp->state == TCP_STATE_LISTEN && s->local_port == local_port) {
+      if (ipaddr_is_equal(&s->local_ip, local_ip)) {
+        return tcp;
+      } else if (ipaddr_is_any(&s->local_ip)) {
+        match = tcp;
+      }
+    }
   }
 
   return match;

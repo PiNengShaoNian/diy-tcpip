@@ -91,8 +91,10 @@ void tcp_read_options(tcp_t *tcp, tcp_hdr_t *tcp_hdr) {
           if (mss < tcp->mss) {
             tcp->mss = mss;
           }
+          opt_start += opt->length;
+        } else {
+          opt_start++;
         }
-        opt_start += opt->length;
         break;
         case TCP_OPT_NOP:
           opt_start++;
