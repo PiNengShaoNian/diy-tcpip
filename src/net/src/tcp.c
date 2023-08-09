@@ -427,6 +427,35 @@ net_err_t tcp_listen(struct _sock_t *s, int backlog) {
 
 net_err_t tcp_accept(struct _sock_t *s, struct x_sockaddr *addr,
                      x_socklen_t *len, struct _sock_t **client) {
+  nlist_node_t *node;
+  nlist_for_each(node, &tcp_list) {
+    sock_t *sock = nlist_entry(node, sock_t, node);
+    tcp_t *tcp = (tcp_t *)sock;
+
+    if (sock == s) {
+      continue;
+    }
+
+    if (tcp->parent != (tcp_t *)s) {
+      continue;
+    }
+
+    if (tcp->flags.inactive && tcp->state == TCP_STATE_ESTABLISHED) {
+      struct x_sockaddr_in *addr_in = (struct x_sockaddr_in *)addr;
+      plat_memset(addr_in, 0, *len);
+      addr_in->sin_family = AF_INET;
+      addr_in->sin_port = x_htons(tcp->base.remote_port);
+      ipaddr_to_buf(&tcp->base.remote_ip, (uint8_t *)&addr_in->sin_addr.s_addr);
+      if (len) {
+        *len = sizeof(struct x_sockaddr_in);
+      }
+
+      tcp->flags.inactive = 0;
+      *client = sock;
+      return NET_ERR_OK;
+    }
+  }
+
   return NET_ERR_NEED_WAIT;
 }
 
