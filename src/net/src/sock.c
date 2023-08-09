@@ -482,7 +482,7 @@ net_err_t sock_listen_req_in(struct _func_msg_t *msg) {
 
   sock_t *sock = s->sock;
 
-  if (!sock->ops->connect) {
+  if (!sock->ops->listen) {
     dbg_error(DBG_SOCKET, "function not impl");
     return NET_ERR_NOT_SUPPORT;
   }
@@ -495,4 +495,41 @@ net_err_t sock_listen_req_in(struct _func_msg_t *msg) {
   return sock->ops->listen(sock, listen->backlog);
 }
 
-net_err_t sock_accept_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+net_err_t sock_accept_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+
+  if (!sock->ops->accept) {
+    dbg_error(DBG_SOCKET, "function not impl");
+    return NET_ERR_NOT_SUPPORT;
+  }
+  sock_accept_t *accept = &req->accept;
+
+  sock_t *client = (sock_t *)0;
+  net_err_t err = sock->ops->accept(sock, accept->addr, accept->len, &client);
+  if (err < 0) {
+    dbg_error(DBG_SOCKET, "accept error");
+    return err;
+  } else if (err == NET_ERR_NEED_WAIT) {
+    if (sock->conn_wait) {
+      sock_wait_add(sock->conn_wait, sock->rcv_tmo, req);
+    }
+  } else {
+    x_socket_t *child_socket = socket_alloc();
+    if (child_socket == (x_socket_t *)0) {
+      dbg_error(DBG_SOCKET, "no socket");
+      return NET_ERR_NONE;
+    }
+
+    child_socket->sock = client;
+    accept->client = get_index(child_socket);
+  }
+  return NET_ERR_OK;
+}

@@ -425,6 +425,11 @@ net_err_t tcp_listen(struct _sock_t *s, int backlog) {
   return NET_ERR_OK;
 }
 
+net_err_t tcp_accept(struct _sock_t *s, struct x_sockaddr *addr,
+                     x_socklen_t *len, struct _sock_t **client) {
+  return NET_ERR_NEED_WAIT;
+}
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
       .connect = tcp_connect,
@@ -434,6 +439,7 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
       .setopt = tcp_setopt,
       .bind = tcp_bind,
       .listen = tcp_listen,
+      .accept = tcp_accept,
   };
   tcp_t *tcp = tcp_get_free(wait);
   if (!tcp) {
