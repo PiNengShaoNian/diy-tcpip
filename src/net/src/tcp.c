@@ -412,6 +412,19 @@ net_err_t tcp_bind(struct _sock_t *s, const struct x_sockaddr *addr,
   return NET_ERR_OK;
 }
 
+net_err_t tcp_listen(struct _sock_t *s, int backlog) {
+  tcp_t *tcp = (tcp_t *)s;
+
+  if (tcp->state != TCP_STATE_CLOSED) {
+    dbg_error(DBG_TCP, "tcp state error");
+    return NET_ERR_STATE;
+  }
+
+  tcp->state = TCP_STATE_LISTEN;
+  tcp->conn.backlog = backlog;
+  return NET_ERR_OK;
+}
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
       .connect = tcp_connect,
@@ -420,6 +433,7 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
       .recv = tcp_recv,
       .setopt = tcp_setopt,
       .bind = tcp_bind,
+      .listen = tcp_listen,
   };
   tcp_t *tcp = tcp_get_free(wait);
   if (!tcp) {

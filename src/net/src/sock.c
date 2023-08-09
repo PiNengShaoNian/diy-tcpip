@@ -471,6 +471,28 @@ net_err_t sock_bind(sock_t *sock, const struct x_sockaddr *addr,
   return NET_ERR_OK;
 }
 
-net_err_t sock_listen_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+net_err_t sock_listen_req_in(struct _func_msg_t *msg) {
+  sock_req_t *req = (sock_req_t *)msg->param;
+
+  x_socket_t *s = get_socket(req->sockfd);
+  if (!s) {
+    dbg_error(DBG_SOCKET, "param error");
+    return NET_ERR_PARAM;
+  }
+
+  sock_t *sock = s->sock;
+
+  if (!sock->ops->connect) {
+    dbg_error(DBG_SOCKET, "function not impl");
+    return NET_ERR_NOT_SUPPORT;
+  }
+  sock_listen_t *listen = &req->listen;
+
+  if (!sock->ops->listen) {
+    return NET_ERR_NOT_SUPPORT;
+  }
+
+  return sock->ops->listen(sock, listen->backlog);
+}
 
 net_err_t sock_accept_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }

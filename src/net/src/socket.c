@@ -293,6 +293,11 @@ int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len) {
 }
 
 int x_listen(int s, int backlog) {
+  if (backlog <= 0) {
+    dbg_error(DBG_SOCKET, "backlog <= 0");
+    return NET_ERR_PARAM;
+  }
+
   sock_req_t req;
   req.wait = 0;
   req.sockfd = s;

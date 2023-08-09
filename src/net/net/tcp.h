@@ -113,6 +113,7 @@ typedef struct _tcp_t {
 
   struct {
     sock_wait_t wait;
+    int backlog;
 
     int keep_idle;
     int keep_intvl;
