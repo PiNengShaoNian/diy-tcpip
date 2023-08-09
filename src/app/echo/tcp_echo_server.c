@@ -25,7 +25,7 @@ int tcp_echo_server_start(int port) {
     goto end;
   }
 
-  listen(s, 5);
+  listen(s, 2);
 
   while (1) {
     struct sockaddr_in client_addr;

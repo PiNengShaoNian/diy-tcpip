@@ -151,7 +151,36 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg) {
   return NET_ERR_OK;
 }
 
-net_err_t tcp_syn_recvd_in(tcp_t *tcp, tcp_seg_t *seg) { return NET_ERR_OK; }
+net_err_t tcp_syn_recvd_in(tcp_t *tcp, tcp_seg_t *seg) {
+  tcp_hdr_t *tcp_hdr = seg->hdr;
+
+  if (tcp_hdr->f_rst) {
+    return tcp_abort(tcp, NET_ERR_RESET);
+  }
+
+  if (tcp_hdr->f_syn) {
+    dbg_warning(DBG_TCP, "recv a syn");
+    tcp_send_reset(seg);
+    return tcp_abort(tcp, NET_ERR_RESET);
+  }
+
+  if (tcp_ack_process(tcp, seg) < 0) {
+    dbg_warning(DBG_TCP, "ack process failed.");
+    return NET_ERR_UNREACH;
+  }
+
+  if (tcp_hdr->f_fin) {
+    dbg_warning(DBG_TCP, "rcv a fin");
+    return NET_ERR_UNREACH;
+  }
+
+  tcp_set_state(tcp, TCP_STATE_ESTABLISHED);
+  if (tcp->parent) {
+    sock_wakeup((sock_t *)tcp->parent, SOCK_WAIT_CONN, NET_ERR_OK);
+  }
+
+  return NET_ERR_OK;
+}
 
 net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg) {
   tcp_hdr_t *tcp_hdr = seg->hdr;
