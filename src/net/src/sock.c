@@ -470,3 +470,7 @@ net_err_t sock_bind(sock_t *sock, const struct x_sockaddr *addr,
 
   return NET_ERR_OK;
 }
+
+net_err_t sock_listen_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }
+
+net_err_t sock_accept_req_in(struct _func_msg_t *msg) { return NET_ERR_OK; }

@@ -292,6 +292,49 @@ int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len) {
   return 0;
 }
 
-int x_listen(int s, int backlog) { return 0; }
+int x_listen(int s, int backlog) {
+  sock_req_t req;
+  req.wait = 0;
+  req.sockfd = s;
+  req.listen.backlog = backlog;
+  net_err_t err = exmsg_func_exec(sock_listen_req_in, &req);
 
-int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len) { return 0; }
+  if (err < 0) {
+    dbg_error(DBG_SOCKET, "listen error");
+    return -1;
+  }
+
+  return 0;
+}
+
+int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len) {
+  if (!addr || !len) {
+    dbg_error(DBG_SOCKET, "param error");
+    return -1;
+  }
+
+  while (1) {
+    sock_req_t req;
+    req.wait = 0;
+    req.sockfd = s;
+    req.accept.addr = addr;
+    req.accept.len = len;
+    req.accept.client = -1;
+
+    net_err_t err = exmsg_func_exec(sock_accept_req_in, &req);
+    if (err < 0) {
+      dbg_error(DBG_SOCKET, "accept failed.");
+      return -1;
+    }
+
+    if (req.accept.client >= 0) {
+      dbg_info(DBG_TCP, "get new connection");
+      return req.accept.client;
+    }
+
+    if (req.wait && (err = sock_wait_enter(req.wait, req.wait_tmo)) < 0) {
+      dbg_error(DBG_SOCKET, "accept failed.");
+      return -1;
+    }
+  }
+}
