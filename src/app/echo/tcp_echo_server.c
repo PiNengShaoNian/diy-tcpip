@@ -39,7 +39,7 @@ int tcp_echo_server_start(int port) {
     plat_printf("tcp echo server: connect ip: %s, port: %d\n",
                 inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
-#if 1
+#if 0
     char buffer[192];
     fgets(buffer, sizeof(buffer), stdin);
 #else
@@ -49,6 +49,7 @@ int tcp_echo_server_start(int port) {
       plat_printf("recv size: %d\n", (int)size);
       send(client, buf, (int)size, 0);
     }
+    recv(client, buf, sizeof(buf), 0);
 #endif
 
     close(client);

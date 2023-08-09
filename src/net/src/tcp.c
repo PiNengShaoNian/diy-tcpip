@@ -67,6 +67,16 @@ net_err_t tcp_init(void) {
 static tcp_t *tcp_get_free(int wait) {
   tcp_t *tcp = mblock_alloc(&tcp_mblock, wait ? 0 : -1);
   if (!tcp) {
+    nlist_node_t *node;
+    nlist_for_each(node, &tcp_list) {
+      tcp_t *s = (tcp_t *)nlist_entry(node, sock_t, node);
+      if (s->state == TCP_STATE_TIME_WAIT) {
+        net_timer_remove(&s->conn.keep_timer);
+        tcp_free(s);
+        return (tcp_t *)mblock_alloc(&tcp_mblock, -1);
+      }
+    }
+
     dbg_error(DBG_TCP, "no tcp sock");
     return (tcp_t *)0;
   }
@@ -185,12 +195,28 @@ void tcp_free(tcp_t *tcp) {
   mblock_free(&tcp_mblock, tcp);
 }
 
+void tcp_clear_parent(tcp_t *tcp) {
+  nlist_node_t *node;
+
+  nlist_for_each(node, &tcp_list) {
+    tcp_t *child = (tcp_t *)nlist_entry(node, sock_t, node);
+    if (child->parent == tcp) {
+      child->parent = (tcp_t *)0;
+    }
+  }
+}
+
 net_err_t tcp_close(struct _sock_t *sock) {
   tcp_t *tcp = (tcp_t *)sock;
 
   switch (tcp->state) {
     case TCP_STATE_CLOSED:
       dbg_info(DBG_TCP, "tcp already closed.");
+      tcp_free(tcp);
+      return NET_ERR_OK;
+    case TCP_STATE_LISTEN:
+      tcp_clear_parent(tcp);
+      tcp_abort(tcp, NET_ERR_CLOSE);
       tcp_free(tcp);
       return NET_ERR_OK;
     case TCP_STATE_SYN_SENT:
