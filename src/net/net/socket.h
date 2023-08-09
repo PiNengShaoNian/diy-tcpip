@@ -95,5 +95,7 @@ int x_setsockopt(int s, int level, int optname, const char* optval, int len);
 int x_close(int s);
 int x_connect(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
 int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
+int x_listen(int s, int backlog);
+int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len);
 
 #endif

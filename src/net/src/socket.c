@@ -291,3 +291,7 @@ int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len) {
 
   return 0;
 }
+
+int x_listen(int s, int backlog) { return 0; }
+
+int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len) { return 0; }

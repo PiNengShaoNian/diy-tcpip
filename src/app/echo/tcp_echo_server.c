@@ -2,15 +2,13 @@
 
 #include <WinSock2.h>
 
+#include "net_api.h"
 #include "sys_plat.h"
 
 int tcp_echo_server_start(int port) {
   plat_printf("tcp server start, port: %d\n", port);
 
-  WSADATA wsdata;
-  WSAStartup(MAKEWORD(2, 2), &wsdata);
-
-  SOCKET s = socket(AF_INET, SOCK_STREAM, 0);
+  int s = socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0) {
     plat_printf("tcp echo client: open socket error\n");
     goto end;
@@ -32,7 +30,7 @@ int tcp_echo_server_start(int port) {
   while (1) {
     struct sockaddr_in client_addr;
     socklen_t addr_len = sizeof(client_addr);
-    SOCKET client = accept(s, (struct sockaddr *)&client_addr, &addr_len);
+    int client = accept(s, (struct sockaddr *)&client_addr, &addr_len);
     if (client < 0) {
       printf("accept error\n");
       break;
@@ -48,17 +46,17 @@ int tcp_echo_server_start(int port) {
       send(client, buf, (int)size, 0);
     }
 
-    closesocket(client);
+    close(client);
     goto end;
   }
 
-  closesocket(s);
+  close(s);
 
   return 0;
 
 end:
   if (s >= 0) {
-    closesocket(s);
+    close(s);
   }
   return -1;
 }

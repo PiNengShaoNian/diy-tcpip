@@ -50,5 +50,7 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
 #define send(s, buf, len, flags) x_send(s, buf, len, flags)
 #define recv(s, buf, len, flags) x_recv(s, buf, len, flags)
 #define bind(s, addr, len) x_bind(s, addr, len)
+#define listen(s, backlog) x_listen(s, backlog)
+#define accept(s, addr, len) x_accept(s, addr, len)
 
 #endif
