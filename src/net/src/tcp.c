@@ -498,6 +498,16 @@ tcp_t *tcp_create_child(tcp_t *tcp, tcp_seg_t *seg) {
   return child;
 }
 
+void tcp_destroy(struct _sock_t *s) {
+  tcp_t *tcp = (tcp_t *)s;
+
+  if (tcp->state == TCP_STATE_TIME_WAIT) {
+    return;
+  }
+
+  tcp_free((tcp_t *)s);
+}
+
 static tcp_t *tcp_alloc(int wait, int family, int protocol) {
   static sock_ops_t ops = {
       .connect = tcp_connect,
@@ -508,6 +518,7 @@ static tcp_t *tcp_alloc(int wait, int family, int protocol) {
       .bind = tcp_bind,
       .listen = tcp_listen,
       .accept = tcp_accept,
+      .destroy = tcp_destroy,
   };
   tcp_t *tcp = tcp_get_free(wait);
   if (!tcp) {

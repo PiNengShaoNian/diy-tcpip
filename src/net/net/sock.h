@@ -154,6 +154,7 @@ net_err_t sock_setsockopt_req_in(struct _func_msg_t *msg);
 net_err_t sock_close_req_in(struct _func_msg_t *msg);
 net_err_t sock_conn_req_in(struct _func_msg_t *msg);
 net_err_t sock_bind_req_in(struct _func_msg_t *msg);
+net_err_t sock_destroy_req_in(struct _func_msg_t *msg);
 net_err_t sock_listen_req_in(struct _func_msg_t *msg);
 net_err_t sock_accept_req_in(struct _func_msg_t *msg);
 net_err_t sock_setopt(struct _sock_t *s, int level, int optname,

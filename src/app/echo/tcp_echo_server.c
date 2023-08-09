@@ -47,7 +47,6 @@ int tcp_echo_server_start(int port) {
     }
 
     close(client);
-    goto end;
   }
 
   close(s);

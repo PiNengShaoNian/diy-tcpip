@@ -65,4 +65,6 @@
 #define TCP_KEEPALIVE_INTVL (5 * 1)
 #define TCP_KEEPALIVE_PROBES 10
 
+#define NET_CLOSE_MAX_TMO 5000
+
 #endif

@@ -227,11 +227,13 @@ int x_close(int s) {
   net_err_t err = exmsg_func_exec(sock_close_req_in, &req);
   if (err < 0) {
     dbg_error(DBG_SOCKET, "close failed.");
+    exmsg_func_exec(sock_destroy_req_in, &req);
     return -1;
   }
 
   if (req.wait) {
     sock_wait_enter(req.wait, req.wait_tmo);
+    exmsg_func_exec(sock_destroy_req_in, &req);
   }
 
   return 0;
