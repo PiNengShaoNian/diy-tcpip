@@ -3,6 +3,7 @@
 #include "dbg.h"
 #include "exmsg.h"
 #include "sock.h"
+#include "sys.h"
 
 int x_socket(int family, int type, int protocol) {
   sock_req_t req;
@@ -348,5 +349,38 @@ int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len) {
 
 int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
                       size_t len, struct x_hostent** result, int* err) {
+  int internal_err;
+  if (!err) {
+    err = &internal_err;
+  }
+
+  if (!name || !ret || !buf || !len || !result) {
+    dbg_error(DBG_SOCKET, "param error");
+    *err = NET_ERR_PARAM;
+    return -1;
+  }
+
+  size_t name_len = plat_strlen(name);
+  if (len < sizeof(hostent_extra_t) + name_len) {
+    dbg_error(DBG_SOCKET, "buf too small");
+    *err = NET_ERR_PARAM;
+    return -1;
+  }
+
+  hostent_extra_t* extra = (hostent_extra_t*)buf;
+  extra->addr = 0;
+
+  plat_strncpy(extra->name, name, name_len);
+  ret->h_name = extra->name;
+  ret->h_aliases = (char**)0;
+  ret->h_addrtype = AF_INET;
+  ret->h_length = 4;
+  ret->h_addr_list = (char**)extra->addr_tbl;
+  ret->h_addr_list[0] = (char*)&extra->addr;
+  ret->h_addr_list[1] = (char*)0;
+
+  *result = ret;
+  *err = NET_ERR_OK;
+
   return 0;
 }

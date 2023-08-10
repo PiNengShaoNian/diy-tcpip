@@ -106,6 +106,14 @@ int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
 int x_listen(int s, int backlog);
 int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len);
 
+typedef uint32_t x_in_addr_t;
+
+typedef struct _hostent_extra_t {
+  x_in_addr_t* addr_tbl[2];
+  x_in_addr_t addr;
+  char name[1];
+} hostent_extra_t;
+
 int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
                       size_t len, struct x_hostent** result, int* err);
 
