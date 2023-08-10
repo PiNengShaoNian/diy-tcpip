@@ -345,3 +345,8 @@ int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len) {
     }
   }
 }
+
+int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
+                      size_t len, struct x_hostent** result, int* err) {
+  return 0;
+}

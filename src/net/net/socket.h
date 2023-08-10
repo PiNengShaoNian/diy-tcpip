@@ -84,6 +84,14 @@ struct x_sockaddr_in {
   char sin_zero[8];
 };
 
+struct x_hostent {
+  char* h_name;       /* official name of host */
+  char** h_aliases;   /* alias list */
+  short h_addrtype;   /* host address type */
+  short h_length;     /* length of address */
+  char** h_addr_list; /* list of addresses */
+};
+
 int x_socket(int family, int type, int protocol);
 ssize_t x_sendto(int s, const void* buf, size_t len, int flags,
                  const struct x_sockaddr* dest, x_socklen_t dlen);
@@ -97,5 +105,8 @@ int x_connect(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
 int x_bind(int s, const struct x_sockaddr* addr, x_socklen_t addr_len);
 int x_listen(int s, int backlog);
 int x_accept(int s, struct x_sockaddr* addr, x_socklen_t* len);
+
+int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
+                      size_t len, struct x_hostent** result, int* err);
 
 #endif

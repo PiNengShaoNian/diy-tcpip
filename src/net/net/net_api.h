@@ -37,6 +37,7 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
 #define sockaddr_in x_sockaddr_in
 #define socklen_t x_socklen_t
 #define timeval x_timeval
+#define hostent x_hostent
 
 #define socket(family, type, protocol) x_socket(family, type, protocol)
 #define sendto(s, buf, len, flags, dest, dlen) \
@@ -52,5 +53,7 @@ const char *x_inet_ntop(int family, const void *addrptr, char *strptr,
 #define bind(s, addr, len) x_bind(s, addr, len)
 #define listen(s, backlog) x_listen(s, backlog)
 #define accept(s, addr, len) x_accept(s, addr, len)
+#define gethostbyname_r(name, ret, buf, len, result, err) \
+  x_gethostbyname_r(name, ret, buf, len, result, err)
 
 #endif

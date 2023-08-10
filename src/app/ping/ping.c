@@ -30,8 +30,16 @@ static uint16_t x_checksum_16(void *buf, uint16_t len) {
 void ping_run(ping_t *ping, const char *dest, int count, int size,
               int interval) {
   static uint16_t start_id = PING_DEFAULT_ID;
-  WSADATA wsdata;
-  WSAStartup(MAKEWORD(2, 2), &wsdata);
+  // WSADATA wsdata;
+  // WSAStartup(MAKEWORD(2, 2), &wsdata);
+
+  struct hostent hent, *result;
+  char buf[512];
+  int err;
+  if (gethostbyname_r(dest, &hent, buf, sizeof(buf), &result, &err) < 0) {
+    printf("resolve host %s failed\n", dest);
+    return;
+  }
 
   int s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
   if (s < 0) {
@@ -53,7 +61,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
   addr.sin_port = 0;
 
 #if 1
-  int err = connect(s, (const struct sockaddr *)&addr, sizeof(addr));
+  err = connect(s, (const struct sockaddr *)&addr, sizeof(addr));
   if (err != 0) {
     printf("connect failed.\n");
     closesocket(s);
