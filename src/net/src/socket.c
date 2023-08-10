@@ -1,6 +1,7 @@
 #include "socket.h"
 
 #include "dbg.h"
+#include "dns.h"
 #include "exmsg.h"
 #include "sock.h"
 #include "sys.h"
@@ -367,6 +368,32 @@ int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
     return -1;
   }
 
+  dns_req_t* dns_req = dns_alloc_req();
+  plat_strncpy(dns_req->domain_name, name, DNS_DOMAIN_NAME_MAX);
+  ipaddr_set_any(&dns_req->ipaddr);
+  dns_req->err = NET_ERR_OK;
+  dns_req->wait_sem = SYS_SEM_INVALID;
+
+  net_err_t e = exmsg_func_exec(dns_req_in, dns_req);
+  if (e < 0) {
+    dbg_error(DBG_SOCKET, "get host ip failed.");
+    *err = e;
+    goto dns_req_err;
+  }
+
+  if ((dns_req->wait_sem != SYS_SEM_INVALID) &&
+      (sys_sem_wait(dns_req->wait_sem, 0) < 0)) {
+    dbg_error(DBG_SOCKET, "wait sem failed.");
+    *err = NET_ERR_TMO;
+    goto dns_req_err;
+  }
+
+  if (dns_req->err < 0) {
+    dbg_error(DBG_SOCKET, "dns resolve failed.");
+    *err = dns_req->err;
+    goto dns_req_err;
+  }
+
   hostent_extra_t* extra = (hostent_extra_t*)buf;
   extra->addr = 0;
 
@@ -381,6 +408,10 @@ int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
 
   *result = ret;
   *err = NET_ERR_OK;
-
+  dns_free_req(dns_req);
   return 0;
+
+dns_req_err:
+  dns_free_req(dns_req);
+  return -1;
 }

@@ -68,4 +68,6 @@
 #define NET_CLOSE_MAX_TMO 5000
 #define TCP_TMO_MSL 5000
 
+#define DNS_DOMAIN_NAME_MAX 64
+
 #endif
