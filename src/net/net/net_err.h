@@ -22,6 +22,10 @@ typedef enum _net_err_t {
   NET_ERR_CLOSE = -16,
   NET_ERR_UNKNOWN = -17,
   NET_ERR_ADDR = -18,
+  NET_ERR_REFUSED = -19,
+  NET_ERR_SERVER_FAILURE = -20,
+  NET_ERR_NOT_EXIST = -21,
+  NET_ERR_FORMAT = -22,
 } net_err_t;
 
 #endif

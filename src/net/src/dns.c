@@ -1,4 +1,4 @@
-#include "dns.h"
+﻿#include "dns.h"
 
 #include "dbg.h"
 #include "mblock.h"
@@ -110,6 +110,29 @@ static dns_entry_t *dns_entry_find(const char *domain_name) {
 
 int dns_is_arrive(udp_t *udp) { return udp == dns_udp; }
 
+static const char *domain_name_cmp(const char *domain_name, const char *name,
+                                   size_t size) {
+  const char *src = domain_name;
+  const char *dest = name;
+
+  while (*src) {
+    int cnt = *dest++;
+    for (int i = 0; i < cnt && *src && *dest; i++) {
+      if (*dest++ != *src++) {
+        return (const char *)0;
+      }
+    }
+
+    if (*src == '\0') {
+      break;
+    } else if (*src++ != '.') {
+      return (const char *)0;
+    }
+  }
+
+  return (dest >= name + size) ? (const char *)0 : dest + 1;
+}
+
 void dns_in(void) {
   ssize_t rcv_len;
   struct x_sockaddr_in src;
@@ -138,7 +161,95 @@ void dns_in(void) {
     if (req->query_id != dns_hdr->id) {
       continue;
     }
+
+    if (dns_hdr->flags.qr == 0) {
+      dbg_warning(DBG_DNS, "not a response");
+      goto req_failed;
+    }
+
+    if (dns_hdr->flags.tc == 1) {
+      dbg_warning(DBG_DNS, "truncated");
+      goto req_failed;
+    }
+
+    if (dns_hdr->flags.ra == 0) {
+      dbg_warning(DBG_DNS, "recursion not support");
+      goto req_failed;
+    }
+
+    switch (dns_hdr->flags.rcode) {
+      // 以下应当更换服务器
+      case DNS_ERR_NONE:
+        // 没有错误
+        break;
+      case DNS_ERR_NOTIMP:
+        dbg_warning(DBG_DNS, "server reply: not support");
+        err = NET_ERR_NOT_SUPPORT;
+        goto req_failed;
+      case DNS_ERR_REFUSED:
+        dbg_warning(DBG_DNS, "server reply: refused");
+        err = NET_ERR_REFUSED;
+        goto req_failed;
+      case DNS_ERR_SERV_FAIL:
+        dbg_warning(DBG_DNS, "server reply: server failure");
+        err = NET_ERR_SERVER_FAILURE;
+        goto req_failed;
+      case DNS_ERR_NXMOMAIN:
+        dbg_warning(DBG_DNS, "server reply: domain not exist");
+        err = NET_ERR_NOT_EXIST;
+        goto req_failed;
+      // 以下直接删除请求
+      case DNS_ERR_FORMAT:
+        dbg_warning(DBG_DNS, "server reply: format error");
+        err = NET_ERR_FORMAT;
+        goto req_failed;
+      default:
+        dbg_warning(DBG_DNS, "unknow error");
+        err = NET_ERR_UNKNOWN;
+        goto req_failed;
+    }
+
+    if (dns_hdr->qdcount == 1) {
+      rcv_start += sizeof(dns_hdr_t);
+      rcv_start = domain_name_cmp(req->domain_name, (const char *)rcv_start,
+                                  rcv_end - rcv_start);
+      if (rcv_start == (uint8_t *)0) {
+        dbg_warning(DBG_DNS, "domain name not match");
+        err = NET_ERR_BROKEN;
+        goto req_failed;
+      }
+
+      if (rcv_start + sizeof(dns_qfield_t) > rcv_end) {
+        dbg_warning(DBG_DNS, "size error");
+        err = NET_ERR_SIZE;
+        goto req_failed;
+      }
+
+      dns_qfield_t *qf = (dns_qfield_t *)rcv_start;
+      if (qf->class != x_ntohs(DNS_QUERY_ClASS_INET)) {
+        dbg_warning(DBG_DNS, "query class not inet");
+        err = NET_ERR_BROKEN;
+        goto req_failed;
+      }
+
+      if (qf->type != x_ntohs(DNS_QUERY_TYPE_A)) {
+        dbg_warning(DBG_DNS, "query type not A");
+        err = NET_ERR_BROKEN;
+        goto req_failed;
+      }
+
+      rcv_start += sizeof(dns_qfield_t);
+    }
+
+    if (dns_hdr->ancount < 1) {
+      dbg_warning(DBG_DNS, "query answer == 0");
+      err = NET_ERR_NONE;
+      goto req_failed;
+    }
   }
+
+req_failed:
+  return;
 }
 
 net_err_t dns_req_in(func_msg_t *msg) {

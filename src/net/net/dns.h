@@ -13,6 +13,14 @@
 #define DNS_QUERY_ClASS_INET 1
 #define DNS_QUERY_TYPE_A 1
 
+// DNS错误类型
+#define DNS_ERR_NONE 0       // 没有错误
+#define DNS_ERR_FORMAT 1     // 格式错误，查询不能被解读
+#define DNS_ERR_SERV_FAIL 2  // 服务器失效，服务器的处理错误
+#define DNS_ERR_NXMOMAIN 3   // 不存在的域名，引用了未知域名
+#define DNS_ERR_NOTIMP 4     // 没有实现，请示在服务器端不被支持
+#define DNS_ERR_REFUSED 5    // 拒绝：服务器不希望提供回答
+
 #pragma pack(1)
 typedef struct _dns_hdr_t {
   uint16_t id;  // 事务ID
