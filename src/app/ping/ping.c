@@ -57,7 +57,7 @@ void ping_run(ping_t *ping, const char *dest, int count, int size,
   struct sockaddr_in addr;
   plat_memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_addr.s_addr = inet_addr(dest);
+  addr.sin_addr.s_addr = *(uint32_t *)hent.h_addr_list[0];
   addr.sin_port = 0;
 
 #if 1

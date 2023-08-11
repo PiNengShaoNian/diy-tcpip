@@ -395,7 +395,7 @@ int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
   }
 
   hostent_extra_t* extra = (hostent_extra_t*)buf;
-  extra->addr = 0;
+  extra->addr = dns_req->ipaddr.q_addr;
 
   plat_strncpy(extra->name, name, name_len);
   ret->h_name = extra->name;
