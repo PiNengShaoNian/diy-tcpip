@@ -26,6 +26,14 @@ dns_req_t *dns_alloc_req(void) {
 
 void dns_free_req(dns_req_t *req) {}
 
+static void dns_req_add(dns_req_t *req) {}
+
+static net_err_t dns_send_query(dns_req_t *req) { return NET_ERR_OK; }
+
+static dns_entry_t *dns_entry_find(const char *domain_name) {
+  return (dns_entry_t *)0;
+}
+
 net_err_t dns_req_in(func_msg_t *msg) {
   dns_req_t *dns_req = (dns_req_t *)msg->param;
 
@@ -42,5 +50,30 @@ net_err_t dns_req_in(func_msg_t *msg) {
     return NET_ERR_OK;
   }
 
+  dns_entry_t *entry = dns_entry_find(dns_req->domain_name);
+  if (entry) {
+    ipaddr_copy(&dns_req->ipaddr, &entry->ipaddr);
+    dns_req->err = NET_ERR_OK;
+    return NET_ERR_OK;
+  }
+
+  dns_req->wait_sem = sys_sem_create(0);
+  if (dns_req->wait_sem == SYS_SEM_INVALID) {
+    dbg_error(DBG_DNS, "create sem failed.");
+    return NET_ERR_SYS;
+  }
+  dns_req_add(dns_req);
+  net_err_t err = dns_send_query(dns_req);
+  if (err < 0) {
+    dbg_error(DBG_DNS, "snd dns query failed.");
+    goto dns_req_end;
+  }
+
   return NET_ERR_OK;
+dns_req_end:
+  if (dns_req->wait_sem != SYS_SEM_INVALID) {
+    sys_sem_free(dns_req->wait_sem);
+    dns_req->wait_sem = SYS_SEM_INVALID;
+  }
+  return err;
 }
