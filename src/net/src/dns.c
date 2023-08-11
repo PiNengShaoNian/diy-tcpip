@@ -16,6 +16,20 @@ static dns_req_t dns_req_tbl[DNS_REQ_SIZE];
 static char working_buf[DNS_WORKING_BUF_SIZE];
 static udp_t *dns_udp;
 
+#if DBG_DISP_ENABLED(DBG_DNS)
+static void show_req_list(void) {
+  nlist_node_t *node;
+
+  nlist_for_each(node, &req_list) {
+    dns_req_t *req = nlist_entry(node, dns_req_t, node);
+
+    plat_printf("name(%s), id: %d\n", req->domain_name, req->query_id);
+  }
+}
+#else
+#define show_req_list()
+#endif
+
 void dns_init(void) {
   dbg_info(DBG_DNS, "DNS init");
 
@@ -30,7 +44,12 @@ void dns_init(void) {
 
 dns_req_t *dns_alloc_req(void) { return mblock_alloc(&req_mblock, 0); }
 
-void dns_free_req(dns_req_t *req) { mblock_free(&req_mblock, req); }
+void dns_free_req(dns_req_t *req) {
+  if (req->wait_sem != SYS_SEM_INVALID) {
+    sys_sem_free(req->wait_sem);
+  }
+  mblock_free(&req_mblock, req);
+}
 
 static void dns_req_add(dns_req_t *req) {
   static int id = 0;
@@ -39,6 +58,8 @@ static void dns_req_add(dns_req_t *req) {
   ipaddr_set_any(&req->ipaddr);
 
   nlist_insert_last(&req_list, &req->node);
+
+  show_req_list();
 }
 
 static uint8_t *add_query_field(const char *domain_name, char *buf,
@@ -153,6 +174,24 @@ static const uint8_t *domain_name_skip(const uint8_t *name, size_t size) {
   }
 
   return c;
+}
+
+static void dns_req_remove(dns_req_t *req, net_err_t err) {
+  nlist_remove(&req_list, &req->node);
+
+  req->err = err;
+  if (req->err < 0) {
+    ipaddr_set_any(&req->ipaddr);
+  }
+  sys_sem_notify(req->wait_sem);
+  sys_sem_free(req->wait_sem);
+  req->wait_sem = SYS_SEM_INVALID;
+
+  show_req_list();
+}
+
+static void dns_req_failed(dns_req_t *req, net_err_t err) {
+  dns_req_remove(req, err);
 }
 
 void dns_in(void) {
@@ -288,13 +327,17 @@ void dns_in(void) {
           (af->type == x_ntohs(DNS_QUERY_TYPE_A)) &&
           (af->rd_len == x_ntohs(IPV4_ADDR_SIZE))) {
         ipaddr_from_buf(&req->ipaddr, (uint8_t *)af->rdata);
+        dns_req_remove(req, NET_ERR_OK);
         return;
       }
-    }
-  }
 
-req_failed:
-  return;
+      rcv_start += sizeof(dns_afield_t) + x_ntohs(af->rd_len) - 1;
+    }
+
+  req_failed:
+    dns_req_failed(req, err);
+    return;
+  }
 }
 
 net_err_t dns_req_in(func_msg_t *msg) {

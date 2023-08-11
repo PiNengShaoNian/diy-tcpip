@@ -382,7 +382,7 @@ int x_gethostbyname_r(const char* name, struct x_hostent* ret, char* buf,
   }
 
   if ((dns_req->wait_sem != SYS_SEM_INVALID) &&
-      (sys_sem_wait(dns_req->wait_sem, 0) < 0)) {
+      (sys_sem_wait(dns_req->wait_sem, DNS_REQ_TMO) < 0)) {
     dbg_error(DBG_SOCKET, "wait sem failed.");
     *err = NET_ERR_TMO;
     goto dns_req_err;
