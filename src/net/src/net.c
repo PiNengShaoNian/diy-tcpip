@@ -2,6 +2,7 @@
 
 #include "arp.h"
 #include "dbg.h"
+#include "dns.h"
 #include "ether.h"
 #include "exmsg.h"
 #include "icmpv4.h"
@@ -39,6 +40,7 @@ net_err_t net_init(void) {
   raw_init();
   udp_init();
   tcp_init();
+  dns_init();
 
   loop_init();
 

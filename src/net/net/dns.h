@@ -14,6 +14,8 @@ typedef struct _dns_req_t {
   sys_sem_t wait_sem;
 } dns_req_t;
 
+void dns_init(void);
+
 dns_req_t *dns_alloc_req(void);
 void dns_free_req(dns_req_t *req);
 

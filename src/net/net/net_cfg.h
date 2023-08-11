@@ -18,6 +18,7 @@
 #define DBG_RAW DBG_LEVEL_ERROR
 #define DBG_UDP DBG_LEVEL_ERROR
 #define DBG_TCP DBG_LEVEL_INFO
+#define DBG_DNS DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE 1
 
@@ -69,5 +70,6 @@
 #define TCP_TMO_MSL 5000
 
 #define DNS_DOMAIN_NAME_MAX 64
+#define DNS_REQ_SIZE 10
 
 #endif
