@@ -133,6 +133,28 @@ static const char *domain_name_cmp(const char *domain_name, const char *name,
   return (dest >= name + size) ? (const char *)0 : dest + 1;
 }
 
+static const uint8_t *domain_name_skip(const uint8_t *name, size_t size) {
+  const uint8_t *c = name;
+  const uint8_t *end = name + size;
+
+  while (*c && (c < end)) {
+    if (*c & 0xc0) {
+      c += 2;
+      return c;
+    } else {
+      c += *c;
+    }
+  }
+
+  if (c < end) {
+    c++;
+  } else {
+    return (const uint8_t *)0;
+  }
+
+  return c;
+}
+
 void dns_in(void) {
   ssize_t rcv_len;
   struct x_sockaddr_in src;
@@ -245,6 +267,29 @@ void dns_in(void) {
       dbg_warning(DBG_DNS, "query answer == 0");
       err = NET_ERR_NONE;
       goto req_failed;
+    }
+
+    for (int i = 0; (i < dns_hdr->ancount) && (rcv_start < rcv_end); i++) {
+      rcv_start = domain_name_skip(rcv_start, rcv_end - rcv_start);
+      if (rcv_start == (uint8_t *)0) {
+        dbg_warning(DBG_DNS, "size error");
+        err = NET_ERR_BROKEN;
+        goto req_failed;
+      }
+
+      if (rcv_start + sizeof(dns_afield_t) > rcv_end) {
+        dbg_warning(DBG_DNS, "size error");
+        err = NET_ERR_BROKEN;
+        goto req_failed;
+      }
+
+      dns_afield_t *af = (dns_afield_t *)rcv_start;
+      if ((af->class == x_ntohs(DNS_QUERY_ClASS_INET)) &&
+          (af->type == x_ntohs(DNS_QUERY_TYPE_A)) &&
+          (af->rd_len == x_ntohs(IPV4_ADDR_SIZE))) {
+        ipaddr_from_buf(&req->ipaddr, (uint8_t *)af->rdata);
+        return;
+      }
     }
   }
 

@@ -61,6 +61,14 @@ typedef struct _dns_hdr_t {
   uint16_t arcount;  // 额外信息数
 } dns_hdr_t;
 
+typedef struct _dns_afield_t {
+  uint16_t type;
+  uint16_t class;
+  uint32_t ttl;
+  uint16_t rd_len;
+  uint16_t rdata[1];
+} dns_afield_t;
+
 typedef struct _dns_qfield_t {
   uint16_t type;
   uint16_t class;
