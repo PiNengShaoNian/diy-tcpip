@@ -118,9 +118,9 @@ net_err_t udp_bind(sock_t *s, const struct x_sockaddr *addr, x_socklen_t len) {
   return NET_ERR_OK;
 }
 
-static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
-                            int flags, const struct x_sockaddr *dest,
-                            x_socklen_t dest_len, ssize_t *result_len) {
+net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
+                     int flags, const struct x_sockaddr *dest,
+                     x_socklen_t dest_len, ssize_t *result_len) {
   ipaddr_t dest_ip;
   struct x_sockaddr_in *addr = (struct x_sockaddr_in *)dest;
   ipaddr_from_buf(&dest_ip, addr->sin_addr.addr_array);
@@ -160,7 +160,9 @@ static net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
     goto fail;
   }
 
-  *result_len = (ssize_t)len;
+  if (result_len) {
+    *result_len = (ssize_t)len;
+  }
   return NET_ERR_OK;
 
 fail:

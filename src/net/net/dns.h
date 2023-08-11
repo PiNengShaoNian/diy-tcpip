@@ -7,6 +7,10 @@
 #include "net_err.h"
 #include "sys.h"
 
+#define DNS_PORT_DEFAULT 53
+#define DNS_QUERY_ClASS_INET 1
+#define DNS_QUERY_TYPE_A 1
+
 #pragma pack(1)
 typedef struct _dns_hdr_t {
   uint16_t id;  // 事务ID
@@ -46,6 +50,11 @@ typedef struct _dns_hdr_t {
   uint16_t nscount;  // 授权纪录数/更新数
   uint16_t arcount;  // 额外信息数
 } dns_hdr_t;
+
+typedef struct _dns_qfield_t {
+  uint16_t type;
+  uint16_t class;
+} dns_qfield_t;
 
 #pragma pack()
 
