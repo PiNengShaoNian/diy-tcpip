@@ -28,14 +28,18 @@ void dns_init(void) {
   dbg_info(DBG_DNS, "DNS init done");
 }
 
-dns_req_t *dns_alloc_req(void) {
-  static dns_req_t req;
-  return &req;
+dns_req_t *dns_alloc_req(void) { return mblock_alloc(&req_mblock, 0); }
+
+void dns_free_req(dns_req_t *req) { mblock_free(&req_mblock, req); }
+
+static void dns_req_add(dns_req_t *req) {
+  static int id = 0;
+  req->query_id = ++id;
+  req->err = NET_ERR_OK;
+  ipaddr_set_any(&req->ipaddr);
+
+  nlist_insert_last(&req_list, &req->node);
 }
-
-void dns_free_req(dns_req_t *req) {}
-
-static void dns_req_add(dns_req_t *req) {}
 
 static uint8_t *add_query_field(const char *domain_name, char *buf,
                                 size_t size) {
@@ -71,7 +75,7 @@ static uint8_t *add_query_field(const char *domain_name, char *buf,
 
 static net_err_t dns_send_query(dns_req_t *req) {
   dns_hdr_t *dns_hdr = (dns_hdr_t *)working_buf;
-  dns_hdr->id = x_htons(0);
+  dns_hdr->id = x_htons(req->query_id);
   dns_hdr->flags.all = 0;
   dns_hdr->flags.qr = 0;
   dns_hdr->flags.rd = 1;
@@ -127,6 +131,14 @@ void dns_in(void) {
   dns_hdr->ancount = x_ntohs(dns_hdr->ancount);
   dns_hdr->nscount = x_ntohs(dns_hdr->nscount);
   dns_hdr->arcount = x_ntohs(dns_hdr->arcount);
+
+  nlist_node_t *curr;
+  nlist_for_each(curr, &req_list) {
+    dns_req_t *req = nlist_entry(curr, dns_req_t, node);
+    if (req->query_id != dns_hdr->id) {
+      continue;
+    }
+  }
 }
 
 net_err_t dns_req_in(func_msg_t *msg) {

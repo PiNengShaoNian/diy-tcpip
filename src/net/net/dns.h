@@ -5,6 +5,7 @@
 #include "ipaddr.h"
 #include "net_cfg.h"
 #include "net_err.h"
+#include "nlist.h"
 #include "sys.h"
 #include "udp.h"
 
@@ -69,6 +70,10 @@ typedef struct _dns_req_t {
   net_err_t err;
   ipaddr_t ipaddr;
   sys_sem_t wait_sem;
+
+  int query_id;
+
+  nlist_node_t node;
 } dns_req_t;
 
 void dns_init(void);
