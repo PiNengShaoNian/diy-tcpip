@@ -71,5 +71,6 @@
 
 #define DNS_DOMAIN_NAME_MAX 64
 #define DNS_REQ_SIZE 10
+#define DNS_WORKING_BUF_SIZE 512
 
 #endif

@@ -4,10 +4,13 @@
 #include "mblock.h"
 #include "net_cfg.h"
 #include "nlist.h"
+#include "tools.h"
 
 static nlist_t req_list;
 static mblock_t req_mblock;
 static dns_req_t dns_req_tbl[DNS_REQ_SIZE];
+
+static char working_buf[DNS_WORKING_BUF_SIZE];
 
 void dns_init(void) {
   dbg_info(DBG_DNS, "DNS init");
@@ -28,7 +31,19 @@ void dns_free_req(dns_req_t *req) {}
 
 static void dns_req_add(dns_req_t *req) {}
 
-static net_err_t dns_send_query(dns_req_t *req) { return NET_ERR_OK; }
+static net_err_t dns_send_query(dns_req_t *req) {
+  dns_hdr_t *dns_hdr = (dns_hdr_t *)working_buf;
+  dns_hdr->id = x_htons(0);
+  dns_hdr->flags.all = 0;
+  dns_hdr->flags.qr = 0;
+  dns_hdr->flags.rd = 1;
+  dns_hdr->qdcount = x_htons(1);
+  dns_hdr->ancount = 0;
+  dns_hdr->nscount = 0;
+  dns_hdr->arcount = 0;
+
+  return NET_ERR_OK;
+}
 
 static dns_entry_t *dns_entry_find(const char *domain_name) {
   return (dns_entry_t *)0;
