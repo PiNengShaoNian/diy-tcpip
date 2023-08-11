@@ -9,6 +9,7 @@
 #include "tools.h"
 #include "udp.h"
 
+static dns_entry_t dns_entry_tbl[DNS_ENTRY_SIZE];
 static nlist_t req_list;
 static mblock_t req_mblock;
 static dns_req_t dns_req_tbl[DNS_REQ_SIZE];
@@ -17,6 +18,19 @@ static char working_buf[DNS_WORKING_BUF_SIZE];
 static udp_t *dns_udp;
 
 #if DBG_DISP_ENABLED(DBG_DNS)
+static void show_entry_list(void) {
+  for (int i = 0; i < DNS_ENTRY_SIZE; i++) {
+    dns_entry_t *entry = dns_entry_tbl + i;
+
+    if (ipaddr_is_any(&entry->ipaddr)) {
+      continue;
+    }
+
+    plat_printf("%s ttl(%d) ", entry->domain_name, entry->ttl);
+    dbg_dump_ip(DBG_DNS, "ip: ", &entry->ipaddr);
+  }
+}
+
 static void show_req_list(void) {
   nlist_node_t *node;
 
@@ -27,11 +41,14 @@ static void show_req_list(void) {
   }
 }
 #else
+#define show_entry_list()
 #define show_req_list()
 #endif
 
 void dns_init(void) {
   dbg_info(DBG_DNS, "DNS init");
+
+  plat_memset(dns_entry_tbl, 0, sizeof(dns_entry_tbl));
 
   nlist_init(&req_list);
   mblock_init(&req_mblock, dns_req_tbl, sizeof(dns_req_t), DNS_REQ_SIZE,

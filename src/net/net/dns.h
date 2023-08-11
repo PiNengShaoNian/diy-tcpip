@@ -79,6 +79,7 @@ typedef struct _dns_qfield_t {
 typedef struct _dns_entry_t {
   ipaddr_t ipaddr;
   char domain_name[DNS_DOMAIN_NAME_MAX];
+  int ttl;
 } dns_entry_t;
 
 typedef struct _dns_req_t {
