@@ -74,5 +74,6 @@
 #define DNS_WORKING_BUF_SIZE 512
 #define DNS_REQ_TMO 5000
 #define DNS_ENTRY_SIZE 10
+#define DNS_UPDATE_PERIOD 1
 
 #endif

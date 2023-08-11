@@ -6,9 +6,11 @@
 #include "net_cfg.h"
 #include "nlist.h"
 #include "socket.h"
+#include "timer.h"
 #include "tools.h"
 #include "udp.h"
 
+static net_timer_t entry_update_timer;
 static dns_entry_t dns_entry_tbl[DNS_ENTRY_SIZE];
 static nlist_t req_list;
 static mblock_t req_mblock;
@@ -45,6 +47,21 @@ static void show_req_list(void) {
 #define show_req_list()
 #endif
 
+static void dns_entry_free(dns_entry_t *entry);
+static void dns_update_tmo(struct _net_timer_t *timer, void *arg) {
+  for (int i = 0; i < DNS_ENTRY_SIZE; i++) {
+    dns_entry_t *entry = dns_entry_tbl + i;
+    if (ipaddr_is_any(&entry->ipaddr)) {
+      continue;
+    }
+
+    if (!entry->ttl || (--entry->ttl == 0)) {
+      dns_entry_free(entry);
+      show_entry_list();
+    }
+  }
+}
+
 void dns_init(void) {
   dbg_info(DBG_DNS, "DNS init");
 
@@ -53,7 +70,11 @@ void dns_init(void) {
   nlist_init(&req_list);
   mblock_init(&req_mblock, dns_req_tbl, sizeof(dns_req_t), DNS_REQ_SIZE,
               NLOCKER_THREAD);
+
+  net_timer_add(&entry_update_timer, "dns timer", dns_update_tmo, (void *)0,
+                DNS_UPDATE_PERIOD * 1000, NET_TIMER_RELOAD);
   dns_udp = (udp_t *)udp_create(AF_INET, IPPROTO_UDP);
+
   dbg_assert(dns_udp != (udp_t *)0, "create dns socket failed.");
 
   dbg_info(DBG_DNS, "DNS init done");
@@ -160,6 +181,7 @@ static void dns_entry_init(dns_entry_t *entry, const char *domain_name, int ttl,
   ipaddr_copy(&entry->ipaddr, ipaddr);
   plat_strncpy(entry->domain_name, domain_name, DNS_DOMAIN_NAME_MAX - 1);
   entry->domain_name[DNS_DOMAIN_NAME_MAX - 1] = '\0';
+  entry->ttl = ttl;
 }
 
 static void dns_entry_free(dns_entry_t *entry) {
