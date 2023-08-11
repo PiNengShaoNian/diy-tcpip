@@ -75,5 +75,7 @@
 #define DNS_REQ_TMO 5000
 #define DNS_ENTRY_SIZE 10
 #define DNS_UPDATE_PERIOD 1
+#define DNS_QUERY_RETRY_TMO 5
+#define DNS_QUERY_RETRY_CNT 5
 
 #endif

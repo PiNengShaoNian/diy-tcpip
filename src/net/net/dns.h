@@ -90,6 +90,9 @@ typedef struct _dns_req_t {
 
   int query_id;
 
+  uint8_t retry_tmo;
+  uint8_t retry_cnt;
+
   nlist_node_t node;
 } dns_req_t;
 

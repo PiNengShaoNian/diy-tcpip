@@ -48,6 +48,9 @@ static void show_req_list(void) {
 #endif
 
 static void dns_entry_free(dns_entry_t *entry);
+static void dns_req_failed(dns_req_t *req, net_err_t err);
+static net_err_t dns_send_query(dns_req_t *req);
+
 static void dns_update_tmo(struct _net_timer_t *timer, void *arg) {
   for (int i = 0; i < DNS_ENTRY_SIZE; i++) {
     dns_entry_t *entry = dns_entry_tbl + i;
@@ -58,6 +61,23 @@ static void dns_update_tmo(struct _net_timer_t *timer, void *arg) {
     if (!entry->ttl || (--entry->ttl == 0)) {
       dns_entry_free(entry);
       show_entry_list();
+    }
+  }
+
+  nlist_node_t *curr;
+  nlist_node_t *next;
+  for (curr = nlist_first(&req_list); curr; curr = next) {
+    next = nlist_node_next(curr);
+
+    dns_req_t *req = nlist_entry(curr, dns_req_t, node);
+
+    if (--req->retry_tmo == 0) {
+      if (--req->retry_cnt == 0) {
+        dns_req_failed(req, NET_ERR_TMO);
+      } else {
+        req->retry_tmo = DNS_QUERY_RETRY_TMO;
+        dns_send_query(req);
+      }
     }
   }
 }
@@ -91,6 +111,9 @@ void dns_free_req(dns_req_t *req) {
 
 static void dns_req_add(dns_req_t *req) {
   static int id = 0;
+
+  req->retry_tmo = DNS_QUERY_RETRY_TMO;
+  req->retry_cnt = DNS_QUERY_RETRY_CNT;
   req->query_id = ++id;
   req->err = NET_ERR_OK;
   ipaddr_set_any(&req->ipaddr);
