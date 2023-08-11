@@ -143,7 +143,52 @@ static net_err_t dns_send_query(dns_req_t *req) {
 }
 
 static dns_entry_t *dns_entry_find(const char *domain_name) {
+  for (int i = 0; i < DNS_ENTRY_SIZE; i++) {
+    dns_entry_t *curr = dns_entry_tbl + i;
+    if (!ipaddr_is_any(&curr->ipaddr)) {
+      if (plat_stricmp(domain_name, curr->domain_name) == 0) {
+        return curr;
+      }
+    }
+  }
+
   return (dns_entry_t *)0;
+}
+
+static void dns_entry_init(dns_entry_t *entry, const char *domain_name, int ttl,
+                           ipaddr_t *ipaddr) {
+  ipaddr_copy(&entry->ipaddr, ipaddr);
+  plat_strncpy(entry->domain_name, domain_name, DNS_DOMAIN_NAME_MAX - 1);
+  entry->domain_name[DNS_DOMAIN_NAME_MAX - 1] = '\0';
+}
+
+static void dns_entry_free(dns_entry_t *entry) {
+  ipaddr_set_any(&entry->ipaddr);
+}
+
+static void dns_entry_insert(const char *domain_name, int ttl,
+                             ipaddr_t *ipaddr) {
+  dns_entry_t *free = (dns_entry_t *)0;
+  dns_entry_t *oldest = (dns_entry_t *)0;
+
+  for (int i = 0; i < DNS_ENTRY_SIZE; i++) {
+    dns_entry_t *entry = dns_entry_tbl + i;
+
+    if (ipaddr_is_any(&entry->ipaddr)) {
+      free = entry;
+      break;
+    }
+
+    if ((oldest == (dns_entry_t *)0) || (entry->ttl < oldest->ttl)) {
+      oldest = entry;
+    }
+  }
+
+  if (free == (dns_entry_t *)0) {
+    free = oldest;
+  }
+
+  dns_entry_init(free, domain_name, ttl, ipaddr);
 }
 
 int dns_is_arrive(udp_t *udp) { return udp == dns_udp; }
@@ -344,6 +389,7 @@ void dns_in(void) {
           (af->type == x_ntohs(DNS_QUERY_TYPE_A)) &&
           (af->rd_len == x_ntohs(IPV4_ADDR_SIZE))) {
         ipaddr_from_buf(&req->ipaddr, (uint8_t *)af->rdata);
+        dns_entry_insert(req->domain_name, x_ntohl(af->ttl), &req->ipaddr);
         dns_req_remove(req, NET_ERR_OK);
         return;
       }
