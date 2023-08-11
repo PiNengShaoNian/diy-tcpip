@@ -41,5 +41,8 @@ net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip);
 net_err_t udp_sendto(struct _sock_t *sock, const void *buf, size_t len,
                      int flags, const struct x_sockaddr *dest,
                      x_socklen_t dest_len, ssize_t *result_len);
+net_err_t udp_recvfrom(struct _sock_t *sock, void *buf, size_t len, int flags,
+                       struct x_sockaddr *src, x_socklen_t *src_len,
+                       ssize_t *result_len);
 
 #endif

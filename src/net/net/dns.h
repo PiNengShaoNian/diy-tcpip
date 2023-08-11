@@ -6,6 +6,7 @@
 #include "net_cfg.h"
 #include "net_err.h"
 #include "sys.h"
+#include "udp.h"
 
 #define DNS_PORT_DEFAULT 53
 #define DNS_QUERY_ClASS_INET 1
@@ -76,5 +77,8 @@ dns_req_t *dns_alloc_req(void);
 void dns_free_req(dns_req_t *req);
 
 net_err_t dns_req_in(func_msg_t *msg);
+
+int dns_is_arrive(udp_t *udp);
+void dns_in(void);
 
 #endif

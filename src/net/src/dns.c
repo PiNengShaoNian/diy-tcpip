@@ -104,6 +104,31 @@ static dns_entry_t *dns_entry_find(const char *domain_name) {
   return (dns_entry_t *)0;
 }
 
+int dns_is_arrive(udp_t *udp) { return udp == dns_udp; }
+
+void dns_in(void) {
+  ssize_t rcv_len;
+  struct x_sockaddr_in src;
+  x_socklen_t addr_len;
+  net_err_t err =
+      udp_recvfrom((sock_t *)dns_udp, working_buf, sizeof(working_buf), 0,
+                   (struct x_sockaddr *)&src, &addr_len, &rcv_len);
+  if (err < 0) {
+    dbg_error(DBG_DNS, "rcv udp error");
+    return;
+  }
+
+  const uint8_t *rcv_start = working_buf;
+  const uint8_t *rcv_end = working_buf + rcv_len;
+  dns_hdr_t *dns_hdr = (dns_hdr_t *)working_buf;
+  dns_hdr->id = x_ntohs(dns_hdr->id);
+  dns_hdr->flags.all = x_ntohs(dns_hdr->flags.all);
+  dns_hdr->qdcount = x_ntohs(dns_hdr->qdcount);
+  dns_hdr->ancount = x_ntohs(dns_hdr->ancount);
+  dns_hdr->nscount = x_ntohs(dns_hdr->nscount);
+  dns_hdr->arcount = x_ntohs(dns_hdr->arcount);
+}
+
 net_err_t dns_req_in(func_msg_t *msg) {
   dns_req_t *dns_req = (dns_req_t *)msg->param;
 

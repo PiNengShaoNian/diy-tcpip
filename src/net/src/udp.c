@@ -1,6 +1,7 @@
 #include "udp.h"
 
 #include "dbg.h"
+#include "dns.h"
 #include "ipaddr.h"
 #include "mblock.h"
 #include "net_cfg.h"
@@ -395,7 +396,11 @@ net_err_t udp_in(pktbuf_t *buf, ipaddr_t *src_ip, ipaddr_t *dest_ip) {
   if (nlist_count(&udp->recv_list) < UDP_MAX_RECV) {
     nlist_insert_last(&udp->recv_list, &buf->node);
 
-    sock_wakeup((sock_t *)udp, SOCK_WAIT_READ, NET_ERR_OK);
+    if (dns_is_arrive(udp)) {
+      dns_in();
+    } else {
+      sock_wakeup((sock_t *)udp, SOCK_WAIT_READ, NET_ERR_OK);
+    }
   } else {
     pktbuf_free(buf);
   }
