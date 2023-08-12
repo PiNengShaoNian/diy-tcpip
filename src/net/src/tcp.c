@@ -666,6 +666,7 @@ int tcp_rcv_window(tcp_t *tcp) {
 
 void tcp_kill_all_timers(tcp_t *tcp) {
   net_timer_remove(&tcp->conn.keep_timer);
+  net_timer_remove(&tcp->snd.timer);
 }
 
 void tcp_alive_tmo(net_timer_t *timer, void *arg) {

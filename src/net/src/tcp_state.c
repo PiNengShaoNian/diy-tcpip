@@ -141,6 +141,7 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg) {
     if (tcp_hdr->f_ack) {
       tcp_send_ack(tcp, seg);
       tcp_set_state(tcp, TCP_STATE_ESTABLISHED);
+      tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
       sock_wakeup(&tcp->base, SOCK_WAIT_CONN, NET_ERR_OK);
     } else {
       tcp_set_state(tcp, TCP_STATE_SYN_RECVD);
@@ -203,7 +204,7 @@ net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg) {
 
   tcp_data_in(tcp, seg);
 
-  tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
 
   if (tcp->flags.fin_in) {
     tcp_set_state(tcp, TCP_STATE_CLOSE_WAIT);
@@ -250,7 +251,7 @@ net_err_t tcp_fin_wait_1_in(tcp_t *tcp, tcp_seg_t *seg) {
 
   tcp_data_in(tcp, seg);
 
-  tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
 
   if (tcp->flags.fin_out == 0) {
     if (tcp->flags.fin_in) {
@@ -312,7 +313,7 @@ net_err_t tcp_closing_in(tcp_t *tcp, tcp_seg_t *seg) {
     return NET_ERR_UNREACH;
   }
 
-  tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
 
   if (tcp->flags.fin_out == 0) {
     tcp_time_wait(tcp);
@@ -367,7 +368,7 @@ net_err_t tcp_close_wait_in(tcp_t *tcp, tcp_seg_t *seg) {
     return NET_ERR_UNREACH;
   }
 
-  tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
 
   return NET_ERR_OK;
 }
@@ -391,7 +392,7 @@ net_err_t tcp_last_ack_in(tcp_t *tcp, tcp_seg_t *seg) {
     return NET_ERR_UNREACH;
   }
 
-  tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
   if (tcp->flags.fin_out == 0) {
     return tcp_abort(tcp, NET_ERR_CLOSE);
   }
