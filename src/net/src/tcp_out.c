@@ -92,10 +92,14 @@ static int copy_send_data(tcp_t *tcp, pktbuf_t *buf, int doff, int dlen) {
   return dlen;
 }
 
-static void get_send_info(tcp_t *tcp, int *doff, int *dlen) {
-  *doff = tcp->snd.nxt - tcp->snd.una;
-  *dlen = tcp_buf_cnt(&tcp->snd.buf) - *doff;
-
+static void get_send_info(tcp_t *tcp, int rexmit, int *doff, int *dlen) {
+  if (rexmit) {
+    *doff = 0;
+    *dlen = tcp_buf_cnt(&tcp->snd.buf);
+  } else {
+    *doff = tcp->snd.nxt - tcp->snd.una;
+    *dlen = tcp_buf_cnt(&tcp->snd.buf) - *doff;
+  }
   *dlen = (*dlen > tcp->mss) ? tcp->mss : *dlen;
 }
 
@@ -121,7 +125,7 @@ static void write_sync_option(tcp_t *tcp, pktbuf_t *buf) {
 
 net_err_t tcp_transmit(tcp_t *tcp) {
   int dlen, doff;
-  get_send_info(tcp, &doff, &dlen);
+  get_send_info(tcp, 0, &doff, &dlen);
   if (dlen < 0) {
     return NET_ERR_OK;
   }
@@ -294,7 +298,14 @@ net_err_t tcp_send_reset_for_tcp(tcp_t *tcp) {
 }
 
 net_err_t tcp_retransmit(tcp_t *tcp) {
-  int seq_len = 0;
+  int dlen, doff;
+  get_send_info(tcp, 1, &doff, &dlen);
+
+  if (dlen < 0) {
+    return NET_ERR_OK;
+  }
+
+  int seq_len = dlen;
   if (tcp->flags.syn_out) {
     seq_len++;
   }
@@ -331,7 +342,9 @@ net_err_t tcp_retransmit(tcp_t *tcp) {
   }
   tcp_set_hdr_size(hdr, buf->total_size);
 
-  // tcp->snd.nxt += hdr->f_syn + hdr->f_fin + dlen;
+  copy_send_data(tcp, buf, doff, dlen);
+
+  tcp->snd.nxt = hdr->f_syn + hdr->f_fin + tcp->snd.una + dlen;
 
   return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
 }
@@ -348,6 +361,9 @@ static void tcp_out_timer_tmo(struct _net_timer_t *timer, void *arg) {
       }
       tcp->snd.remix_cnt = 1;
       tcp->snd.rto *= 2;
+      if (tcp->snd.rto >= TCP_RTO_MAX) {
+        tcp->snd.rto = TCP_RTO_MAX;
+      }
       tcp->snd.ostate = TCP_OSTATE_REXMIT;
       net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
                     tcp, tcp->snd.rto, 0);
@@ -381,29 +397,32 @@ static void tcp_out_timer_tmo(struct _net_timer_t *timer, void *arg) {
 
 void tcp_set_ostate(tcp_t *tcp, tcp_ostate_t state) {
   if (state >= TCP_OSTATE_MAX) {
+    dbg_error(DBG_TCP, "unknown state: %d", tcp->snd.ostate);
     return;
   }
 
+  int tmo = 0;
   switch (state) {
     case TCP_OSTATE_IDLE:
+      tcp->snd.rto = TCP_INIT_RTO;
       tcp->snd.ostate = TCP_OSTATE_IDLE;
       net_timer_remove(&tcp->snd.timer);
-      break;
+      return;
     case TCP_OSTATE_SENDING:
-      tcp->snd.ostate = TCP_OSTATE_SENDING;
-      net_timer_remove(&tcp->snd.timer);
-      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
-                    tcp, tcp->snd.rto, 0);
+      tmo = tcp->snd.rto;
       break;
     case TCP_OSTATE_REXMIT:
-      tcp->snd.ostate = TCP_OSTATE_REXMIT;
-      net_timer_remove(&tcp->snd.timer);
-      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
-                    tcp, tcp->snd.rto, 0);
+      tmo = tcp->snd.rto;
       break;
     default:
       break;
   }
+
+  tcp->snd.ostate = state;
+  tcp->snd.rto = tmo;
+  net_timer_remove(&tcp->snd.timer);
+  net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo, tcp,
+                tmo, 0);
 }
 
 static void tcp_ostate_idle_in(tcp_t *tcp, tcp_oevent_t event) {
@@ -420,7 +439,7 @@ static void tcp_ostate_sending_in(tcp_t *tcp, tcp_oevent_t event) {
   switch (event) {
     case TCP_OEVENT_SEND:
       if (tcp->snd.una == tcp->snd.nxt || tcp->flags.fin_out) {
-        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_in) {
+        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_out) {
           tcp_transmit(tcp);
           tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
         } else {
@@ -435,7 +454,7 @@ static void tcp_ostate_resending_in(tcp_t *tcp, tcp_oevent_t event) {
   switch (event) {
     case TCP_OEVENT_SEND:
       if (tcp->snd.una == tcp->snd.nxt || tcp->flags.fin_out) {
-        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_in) {
+        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_out) {
           tcp_transmit(tcp);
           tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
         } else {

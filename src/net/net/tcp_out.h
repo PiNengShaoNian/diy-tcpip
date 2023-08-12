@@ -5,8 +5,6 @@
 
 typedef enum _tcp_oevent_t {
   TCP_OEVENT_SEND,
-  TCP_OEVENT_XMIT,
-  TCP_OEVENT_TMO,
 } tcp_oevent_t;
 
 net_err_t tcp_send_reset(tcp_seg_t *seg);

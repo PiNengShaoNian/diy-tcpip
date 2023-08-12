@@ -38,7 +38,7 @@ int tcp_echo_client_start(const char *ip, int port) {
     sbuf[i] = 'a' + i % 26;
   }
 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 100; i++) {
     ssize_t size = send(s, sbuf, sizeof(sbuf), 0);
     if (size < 0) {
       printf("send error\n");

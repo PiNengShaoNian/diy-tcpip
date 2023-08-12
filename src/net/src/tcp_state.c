@@ -136,12 +136,12 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg) {
     tcp_read_options(tcp, tcp_hdr);
     if (tcp_hdr->f_ack) {
       tcp_ack_process(tcp, seg);
+      tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
     }
 
-    if (tcp_hdr->f_ack) {
+    if (tcp->snd.una - tcp->snd.iss > 0) {
       tcp_send_ack(tcp, seg);
       tcp_set_state(tcp, TCP_STATE_ESTABLISHED);
-      tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
       sock_wakeup(&tcp->base, SOCK_WAIT_CONN, NET_ERR_OK);
     } else {
       tcp_set_state(tcp, TCP_STATE_SYN_RECVD);
