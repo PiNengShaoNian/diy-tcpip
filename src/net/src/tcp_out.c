@@ -351,7 +351,6 @@ static void tcp_out_timer_tmo(struct _net_timer_t *timer, void *arg) {
       tcp->snd.ostate = TCP_OSTATE_REXMIT;
       net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
                     tcp, tcp->snd.rto, 0);
-      dbg_warning(DBG_TCP, "rexmit");
       break;
     }
     case TCP_OSTATE_REXMIT: {
@@ -373,7 +372,6 @@ static void tcp_out_timer_tmo(struct _net_timer_t *timer, void *arg) {
       }
       net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
                     tcp, tcp->snd.rto, 0);
-      dbg_warning(DBG_TCP, "rexmit");
       break;
     }
     default:
@@ -410,28 +408,46 @@ void tcp_set_ostate(tcp_t *tcp, tcp_ostate_t state) {
 
 static void tcp_ostate_idle_in(tcp_t *tcp, tcp_oevent_t event) {
   switch (event) {
-    case TCP_OEVENT_SEND:
+    case TCP_OEVENT_SEND: {
       tcp_transmit(tcp);
       tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
       break;
-    default:
-      break;
+    }
   }
 }
 
 static void tcp_ostate_sending_in(tcp_t *tcp, tcp_oevent_t event) {
   switch (event) {
     case TCP_OEVENT_SEND:
-      if (tcp->snd.una == tcp->snd.nxt) {
-        tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
+      if (tcp->snd.una == tcp->snd.nxt || tcp->flags.fin_out) {
+        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_in) {
+          tcp_transmit(tcp);
+          tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
+        } else {
+          tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
+        }
       }
-      break;
-    default:
       break;
   }
 }
 
-static void tcp_ostate_resending_in(tcp_t *tcp, tcp_oevent_t event) {}
+static void tcp_ostate_resending_in(tcp_t *tcp, tcp_oevent_t event) {
+  switch (event) {
+    case TCP_OEVENT_SEND:
+      if (tcp->snd.una == tcp->snd.nxt || tcp->flags.fin_out) {
+        if (tcp_buf_cnt(&tcp->snd.buf) || tcp->flags.fin_in) {
+          tcp_transmit(tcp);
+          tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
+        } else {
+          tcp_set_ostate(tcp, TCP_OSTATE_IDLE);
+        }
+      } else {
+        tcp_set_ostate(tcp, TCP_OSTATE_REXMIT);
+        tcp_retransmit(tcp);
+      }
+      break;
+  }
+}
 
 typedef void (*state_func_t)(tcp_t *tcp, tcp_oevent_t event);
 
