@@ -68,6 +68,7 @@
 
 #define TCP_INIT_RTO 1000  // tcp initial timeout
 #define TCP_INIT_RETRIES 5
+#define TCP_RTO_MAX 8000
 
 #define NET_CLOSE_MAX_TMO 5000
 #define TCP_TMO_MSL 5000

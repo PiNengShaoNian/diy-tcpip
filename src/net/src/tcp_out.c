@@ -293,7 +293,88 @@ net_err_t tcp_send_reset_for_tcp(tcp_t *tcp) {
   return send_out(out, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
 }
 
-static void tcp_ostate_idle_in(tcp_t *tcp, tcp_oevent_t event) {}
+static void tcp_out_timer_tmo(struct _net_timer_t *timer, void *arg) {
+  tcp_t *tcp = (tcp_t *)arg;
+
+  switch (tcp->snd.ostate) {
+    case TCP_OSTATE_SENDING: {
+      net_err_t err = 0;
+      if (err < 0) {
+        dbg_error(DBG_TCP, "rexmit failed.");
+        return;
+      }
+      tcp->snd.remix_cnt = 1;
+      tcp->snd.rto *= 2;
+      tcp->snd.ostate = TCP_OSTATE_REXMIT;
+      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
+                    tcp, tcp->snd.rto, 0);
+      dbg_warning(DBG_TCP, "rexmit");
+      break;
+    }
+    case TCP_OSTATE_REXMIT: {
+      if (++tcp->snd.remix_cnt > tcp->snd.remix_max) {
+        dbg_error(DBG_TCP, "rexmit tmo error");
+        tcp_abort(tcp, NET_ERR_TMO);
+        return;
+      }
+
+      net_err_t err = 0;
+      if (err < 0) {
+        dbg_error(DBG_TCP, "rexmit failed.");
+        return;
+      }
+
+      tcp->snd.rto *= 2;
+      if (tcp->snd.rto >= TCP_RTO_MAX) {
+        tcp->snd.rto = TCP_RTO_MAX;
+      }
+      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
+                    tcp, tcp->snd.rto, 0);
+      dbg_warning(DBG_TCP, "rexmit");
+      break;
+    }
+    default:
+      break;
+  }
+}
+
+void tcp_set_ostate(tcp_t *tcp, tcp_ostate_t state) {
+  if (state >= TCP_OSTATE_MAX) {
+    return;
+  }
+
+  switch (state) {
+    case TCP_OSTATE_IDLE:
+      tcp->snd.ostate = TCP_OSTATE_IDLE;
+      net_timer_remove(&tcp->snd.timer);
+      break;
+    case TCP_OSTATE_SENDING:
+      tcp->snd.ostate = TCP_OSTATE_SENDING;
+      net_timer_remove(&tcp->snd.timer);
+      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
+                    tcp, tcp->snd.rto, 0);
+      break;
+    case TCP_OSTATE_REXMIT:
+      tcp->snd.ostate = TCP_OSTATE_REXMIT;
+      net_timer_remove(&tcp->snd.timer);
+      net_timer_add(&tcp->snd.timer, tcp_ostate_name(tcp), tcp_out_timer_tmo,
+                    tcp, tcp->snd.rto, 0);
+      break;
+    default:
+      break;
+  }
+}
+
+static void tcp_ostate_idle_in(tcp_t *tcp, tcp_oevent_t event) {
+  switch (event) {
+    case TCP_OEVENT_SEND:
+      tcp_transmit(tcp);
+      tcp_set_ostate(tcp, TCP_OSTATE_SENDING);
+      break;
+    default:
+      break;
+  }
+}
 
 static void tcp_ostate_sending_in(tcp_t *tcp, tcp_oevent_t event) {}
 
