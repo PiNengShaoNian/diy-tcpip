@@ -172,7 +172,8 @@ net_err_t tcp_transmit(tcp_t *tcp) {
 
 net_err_t tcp_send_syn(tcp_t *tcp) {
   tcp->flags.syn_out = 1;
-  tcp_transmit(tcp);
+  // tcp_transmit(tcp);
+  tcp_out_event(tcp, TCP_OEVENT_SEND);
   return NET_ERR_OK;
 }
 
@@ -290,4 +291,27 @@ net_err_t tcp_send_reset_for_tcp(tcp_t *tcp) {
   tcp_set_hdr_size(out, sizeof(tcp_hdr_t));
 
   return send_out(out, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
+}
+
+static void tcp_ostate_idle_in(tcp_t *tcp, tcp_oevent_t event) {}
+
+static void tcp_ostate_sending_in(tcp_t *tcp, tcp_oevent_t event) {}
+
+static void tcp_ostate_resending_in(tcp_t *tcp, tcp_oevent_t event) {}
+
+typedef void (*state_func_t)(tcp_t *tcp, tcp_oevent_t event);
+
+void tcp_out_event(tcp_t *tcp, tcp_oevent_t event) {
+  static state_func_t state_func[] = {
+      [TCP_OSTATE_IDLE] = tcp_ostate_idle_in,
+      [TCP_OSTATE_SENDING] = tcp_ostate_sending_in,
+      [TCP_OSTATE_REXMIT] = tcp_ostate_resending_in,
+  };
+
+  if (tcp->snd.ostate >= TCP_OSTATE_MAX) {
+    dbg_error(DBG_TCP, "tcp ostate error: %s", tcp_ostate_name(tcp));
+    return;
+  }
+
+  state_func[tcp->snd.ostate](tcp, event);
 }

@@ -3,6 +3,12 @@
 
 #include "tcp.h"
 
+typedef enum _tcp_oevent_t {
+  TCP_OEVENT_SEND,
+  TCP_OEVENT_XMIT,
+  TCP_OEVENT_TMO,
+} tcp_oevent_t;
+
 net_err_t tcp_send_reset(tcp_seg_t *seg);
 net_err_t tcp_send_syn(tcp_t *tcp);
 net_err_t tcp_ack_process(tcp_t *tcp, tcp_seg_t *seg);
@@ -15,5 +21,7 @@ net_err_t tcp_send_keepalive(tcp_t *tcp);
 net_err_t tcp_send_reset_for_tcp(tcp_t *tcp);
 
 const char *tcp_ostate_name(tcp_t *tcp);
+
+void tcp_out_event(tcp_t *tcp, tcp_oevent_t event);
 
 #endif
