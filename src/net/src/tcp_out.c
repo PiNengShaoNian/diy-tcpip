@@ -5,6 +5,21 @@
 #include "protocol.h"
 #include "tools.h"
 
+const char *tcp_ostate_name(tcp_t *tcp) {
+  static const char *state_name[] = {
+      [TCP_OSTATE_IDLE] = "idle",
+      [TCP_OSTATE_SENDING] = "sending",
+      [TCP_OSTATE_REXMIT] = "resending",
+      [TCP_OSTATE_MAX] = "unknown",
+  };
+
+  tcp_ostate_t state = tcp->snd.ostate;
+  if (state > TCP_OSTATE_MAX) {
+    state = TCP_OSTATE_MAX;
+  }
+  return state_name[state];
+}
+
 static net_err_t send_out(tcp_hdr_t *out, pktbuf_t *buf, ipaddr_t *dest,
                           ipaddr_t *src) {
   tcp_show_pkt("tcp out", out, buf);

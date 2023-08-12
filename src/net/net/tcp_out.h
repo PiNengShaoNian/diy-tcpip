@@ -14,4 +14,6 @@ net_err_t tcp_transmit(tcp_t *tcp);
 net_err_t tcp_send_keepalive(tcp_t *tcp);
 net_err_t tcp_send_reset_for_tcp(tcp_t *tcp);
 
+const char *tcp_ostate_name(tcp_t *tcp);
+
 #endif
