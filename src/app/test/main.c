@@ -393,7 +393,7 @@ int main(int argc, char **argv) {
 
   // udp_echo_client_start(friend0_ip, 1000);
   // udp_echo_server_start(2000);
-  // tcp_echo_client_start(friend0_ip, 1000);
+  tcp_echo_client_start(friend0_ip, 1000);
   // tcp_echo_server_start(1000);
   // download("hello.txt", 1000);
 
@@ -403,7 +403,7 @@ int main(int argc, char **argv) {
   // ping_run(&p, friend0_ip, 4, 64, 1000);
   // ping_run(&p, "localhost", 1, 64, 1000);
   // ping_run(&p, "8.8.8.8", 4, 64, 1000);
-  ping_run(&p, "baidu.com", 4, 64, 1000);
+  // ping_run(&p, "baidu.com", 4, 64, 1000);
 
   while (1) {
     printf(">>");

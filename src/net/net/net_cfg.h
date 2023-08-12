@@ -66,6 +66,9 @@
 #define TCP_KEEPALIVE_INTVL (5 * 1)
 #define TCP_KEEPALIVE_PROBES 10
 
+#define TCP_INIT_RTO 1000  // tcp initial timeout
+#define TCP_INIT_RETRIES 5
+
 #define NET_CLOSE_MAX_TMO 5000
 #define TCP_TMO_MSL 5000
 

@@ -97,6 +97,14 @@ typedef enum _tcp_state_t {
   TCP_STATE_MAX,
 } tcp_state_t;
 
+typedef enum _tcp_ostate_t {
+  TCP_OSTATE_IDLE,
+  TCP_OSTATE_SENDING,
+  TCP_OSTATE_REXMIT,
+
+  TCP_OSTATE_MAX,
+} tcp_ostate_t;
+
 typedef struct _tcp_t {
   sock_t base;
   struct _tcp_t *parent;  // 父tcp结构
@@ -131,6 +139,12 @@ typedef struct _tcp_t {
     uint32_t nxt;  // 第一个还未发送的序号
     uint32_t iss;  // 起始的发送序号
     sock_wait_t wait;
+
+    tcp_ostate_t ostate;
+    int remix_cnt;
+    int remix_max;
+    net_timer_t timer;
+    int rto;
   } snd;
 
   struct {
